@@ -86,7 +86,7 @@ Param(
 # Output Directory
 if (!($OutputDir))
 {
-    $script:OUTPUT_FOLDER = "$env:USERPROFILE\Desktop\MFA-Analyzer" # Default
+    $script:OUTPUT_FOLDER = "Output\MFA-Analyzer" # Default
 }
 else
 {
@@ -109,11 +109,13 @@ else
 #region Header
 
 # Check if the PowerShell script is being run with admin rights
+if($isWindows){
 if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
 {
     Write-Host "[Error] This PowerShell script must be run with admin rights." -ForegroundColor Red
     $Host.UI.RawUI.WindowTitle = "$DefaultWindowsTitle"
     Exit
+}
 }
 
 # Check if PowerShell module 'ImportExcel' is installed
@@ -125,8 +127,10 @@ if (!(Get-Module -ListAvailable -Name ImportExcel))
 }
 
 # Windows Title
-$DefaultWindowsTitle = $Host.UI.RawUI.WindowTitle
-$Host.UI.RawUI.WindowTitle = "MFA-Analyzer - Automated Analysis of Authentication Methods and User Registration Details for DFIR"
+if ($isWindows){
+	$DefaultWindowsTitle = $Host.UI.RawUI.WindowTitle
+	$Host.UI.RawUI.WindowTitle = "MFA-Analyzer - Automated Analysis of Authentication Methods and User Registration Details for DFIR"
+}
 
 # Flush Output Directory
 if (Test-Path "$OUTPUT_FOLDER")
@@ -180,7 +184,8 @@ if(!($Path))
 }
 else
 {
-    $script:LogFile = $Path
+    #$script:LogFile = $Path
+    $script:AuthenticationMethods = $Path
 }
 
 # Create a record of your PowerShell session to a text file
@@ -453,11 +458,15 @@ if (Test-Path "$OUTPUT_FOLDER\Stats\CSV\AuthenticationMethod.csv")
 # Processing User Registration Details
 Write-Output "[Info]  Processing User Registration Details ..."
 
-$File = Get-Item "$AuthenticationMethods"
-$Prefix = $File.Name | ForEach-Object{($_ -split "-")[0]}
-$FilePath = $File.Directory
-$UserRegistrationDetails = "$FilePath" + "\" + "$Prefix" + "-MFA-UserRegistrationDetails.csv"
-
+#$File = Get-Item "$AuthenticationMethods"
+#$Prefix = $File.Name | ForEach-Object{($_ -split "-")[0]}
+#$FilePath = $File.Directory
+#$UserRegistrationDetails = "$FilePath".replace('/','\') + "\" + "$Prefix" + "-MFA-UserRegistrationDetails.csv"
+$UserRegistrationDetails = "$AuthenticationMethods".replace('AuthenticationMethods','UserRegistrationDetails')
+echo "---------------------------------------------------------"
+echo $AuthenticationMethods
+echo $UserRegistrationDetails
+echo "---------------------------------------------------------"
 # Input-Check
 if (!(Test-Path "$UserRegistrationDetails"))
 {
