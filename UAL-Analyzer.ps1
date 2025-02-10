@@ -150,7 +150,11 @@ $script:Orange = [System.Drawing.Color]::FromArgb(255,192,0) # Orange
 # Output Directory
 if (!($OutputDir))
 {
-    $script:OUTPUT_FOLDER = "$env:USERPROFILE\Desktop\UAL-Analyzer" # Default
+if ($isWindows){
+        $script:OUTPUT_FOLDER = "$env:USERPROFILE\Desktop\UAL-Analyzer" # Default
+} else {
+        $script:OUTPUT_FOLDER = "Output\UAL-Analyzer" # Default
+}
 }
 else
 {
@@ -168,10 +172,21 @@ else
 # Tools
 
 # IPinfo CLI
+if ($isWindows){
 $script:IPinfo = "$SCRIPT_DIR\Tools\IPinfo\ipinfo.exe"
+} else {
+$script:IPinfo = "ipinfo"
+}
 
 # xsv
+if ($isWindows){
 $script:xsv = "$SCRIPT_DIR\Tools\xsv\xsv.exe"
+$script:dirDeli='\'
+} else {
+$script:xsv = "xsv"
+$script:dirDeli='/'
+}
+
 
 # ASN Whitelist
 $script:Whitelist = (Import-Csv "$SCRIPT_DIR\Whitelists\ASN-Whitelist.csv" -Delimiter "," | Select-Object -ExpandProperty ASN) -join "|"
@@ -193,11 +208,13 @@ else
 
 #region Header
 
+if ($isWindows){
 # Check if the PowerShell script is being run with admin rights
 if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
 {
     Write-Host "[Error] This PowerShell script must be run with admin rights." -ForegroundColor Red
     Exit
+}
 }
 
 # Check if PowerShell module 'ImportExcel' is installed
@@ -208,9 +225,11 @@ if (!(Get-Module -ListAvailable -Name ImportExcel))
     Exit
 }
 
+if ($isWindows){
 # Windows Title
 $DefaultWindowsTitle = $Host.UI.RawUI.WindowTitle
 $Host.UI.RawUI.WindowTitle = "UAL-Analyzer - Automated Processing of M365 Unified Audit Logs for DFIR"
+}
 
 # Flush Output Directory
 if (Test-Path "$OUTPUT_FOLDER")
@@ -222,9 +241,10 @@ else
 {
     New-Item "$OUTPUT_FOLDER" -ItemType Directory -Force | Out-Null
 }
-
+if ($isWindows){
 # Add the required MessageBox class (Windows PowerShell)
 Add-Type -AssemblyName System.Windows.Forms
+}
 
 # Function Get-FileSize
 Function Get-FileSize()
@@ -241,6 +261,8 @@ Function Get-FileSize()
 # Select Log File
 if(!($Path))
 {
+
+if ($isWindows){
     Function Get-LogFile($InitialDirectory)
     { 
         [System.Reflection.Assembly]::LoadWithPartialName("System.Windows.Forms") | Out-Null
@@ -264,6 +286,10 @@ if(!($Path))
         $Host.UI.RawUI.WindowTitle = "$DefaultWindowsTitle"
         Exit
     }
+}
+if ($isLinux){
+$script:LogFile = Read-Host "Plese type path to logfile: "
+}
 }
 else
 {
@@ -306,7 +332,7 @@ Write-Output ""
 $script:ApplicationBlacklist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv") -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv".replace('\','/')) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv" -Delimiter "," | ForEach-Object { $ApplicationBlacklist_HashTable[$_.AppId] = $_.AppDisplayName,$_.Severity }
 
@@ -320,7 +346,7 @@ if (Test-Path "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv")
 $script:AsnBlacklist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Blacklists\ASN-Blacklist.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\ASN-Blacklist.csv") -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\ASN-Blacklist.csv".replace('\','/')) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Blacklists\ASN-Blacklist.csv" -Delimiter "," | ForEach-Object { $AsnBlacklist_HashTable[$_.ASN] = $_.OrgName,$_.Info }
 
@@ -334,7 +360,7 @@ if (Test-Path "$SCRIPT_DIR\Blacklists\ASN-Blacklist.csv")
 $script:CountryBlacklist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Blacklists\Country-Blacklist.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\Country-Blacklist.csv") -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\Country-Blacklist.csv".replace('\','/')) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Blacklists\Country-Blacklist.csv" -Delimiter "," | ForEach-Object { $CountryBlacklist_HashTable[$_."Country Name"] = $_.Country }
 
@@ -348,7 +374,7 @@ if (Test-Path "$SCRIPT_DIR\Blacklists\Country-Blacklist.csv")
 $script:MoveToFolderBlacklist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Blacklists\MoveToFolder-Blacklist.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\MoveToFolder-Blacklist.csv") -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\MoveToFolder-Blacklist.csv".replace('\','/')) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Blacklists\MoveToFolder-Blacklist.csv" -Delimiter "," | ForEach-Object { $MoveToFolderBlacklist_HashTable[$_.Name] = $_.Language }
 
@@ -362,7 +388,7 @@ if (Test-Path "$SCRIPT_DIR\Blacklists\MoveToFolder-Blacklist.csv")
 $script:UserAgentBlacklist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Blacklists\UserAgent-Blacklist.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\UserAgent-Blacklist.csv") -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\UserAgent-Blacklist.csv".replace('\','/')) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Blacklists\UserAgent-Blacklist.csv" -Delimiter "," | ForEach-Object { $UserAgentBlacklist_HashTable[$_.UserAgent] = $_.Category,$_.Severity }
 
@@ -443,7 +469,9 @@ if (!(Test-Path "$LogFile" -PathType Leaf))
     Write-Host "[Error] $LogFile does not exist." -ForegroundColor Red
     Write-Host ""
     Stop-Transcript
+    if ($isWindows){
     $Host.UI.RawUI.WindowTitle = "$DefaultWindowsTitle"
+    }
     Exit
 }
 
@@ -451,10 +479,12 @@ if (!(Test-Path "$LogFile" -PathType Leaf))
 $Extension = [IO.Path]::GetExtension($LogFile)
 if (!($Extension -eq ".csv" ))
 {
-    Write-Host "[Error] No CSV File provided." -ForegroundColor Red
+    Write-Host "[Error] No csv File provided." -ForegroundColor Red
     Write-Host ""
     Stop-Transcript
+    if ($isWindows){
     $Host.UI.RawUI.WindowTitle = "$DefaultWindowsTitle"
+    }
     Exit
 }
 
@@ -464,7 +494,9 @@ if ("$Token" -eq "access_token")
     Write-Host "[Error] No IPinfo CLI Access Token provided. Please add your personal access token to 'Config.ps1'" -ForegroundColor Red
     Write-Host ""
     Stop-Transcript
+    if ($isWindows){
     $Host.UI.RawUI.WindowTitle = "$DefaultWindowsTitle"
+    }
     Exit
 }
 
@@ -475,7 +507,9 @@ if ($Count -gt 1)
 {
     Write-Host "[Error] Single User Audit ONLY." -ForegroundColor Red
     Stop-Transcript
+    if ($isWindows){
     $Host.UI.RawUI.WindowTitle = "$DefaultWindowsTitle"
+    }
     Exit
 }
 else
@@ -594,7 +628,7 @@ $Results | Export-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv" -No
 # Custom XLSX
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv")
 {
-    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv") -gt 0)
+    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv".replace('\','/')) -gt 0)
     {
         $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv" -Delimiter ","
         $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX\Custom.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,6 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Custom View" -CellStyleSB {
@@ -612,7 +646,7 @@ if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv")
 # XLSX
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\SessionCookieTheft.csv")
 {
-    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\SessionCookieTheft.csv") -gt 0)
+    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\SessionCookieTheft.csv".replace('\','/')) -gt 0)
     {
         $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\SessionCookieTheft.csv" -Delimiter "," | Sort-Object @{Expression={ $_."ClientIP" -as [Int] }} -Descending
         $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX\SessionCookieTheft.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SessionCookieTheft" -CellStyleSB {
@@ -897,7 +931,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboxRule.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboxRule.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboxRule.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboxRule.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\New-InboxRule.xlsx" -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "New-InboxRule" -CellStyleSB {
@@ -1001,7 +1035,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboxRule_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboxRule_AuditData.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboxRule_AuditData.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboxRule_AuditData.csv" -Delimiter ","
             
@@ -1096,7 +1130,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-InboxRule.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-InboxRule.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-InboxRule.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-InboxRule.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Set-InboxRule.xlsx" -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Set-InboxRule" -CellStyleSB {
@@ -1201,7 +1235,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-InboxRule_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-InboxRule_AuditData.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-InboxRule_AuditData.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-InboxRule_AuditData.csv" -Delimiter "," -Encoding UTF8
 
@@ -1677,7 +1711,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\UpdateInboxRules.xlsx" -FreezePane 2,5 -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "UpdateInboxRules" -CellStyleSB {
@@ -1718,7 +1752,7 @@ if ($Count -gt 0)
         # XLSX
         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ForwardToRecipientsAction.csv")
         {
-            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ForwardToRecipientsAction.csv") -gt 0)
+            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ForwardToRecipientsAction.csv".replace('\','/')) -gt 0)
             {
                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ForwardToRecipientsAction.csv" -Delimiter ","
                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\UpdateInboxRules-ForwardToRecipientsAction.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "ForwardToRecipientsAction" -CellStyleSB {
@@ -1754,7 +1788,7 @@ if ($Count -gt 0)
         # XLSX
         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ForwardAsAttachmentToRecipientsAction.csv")
         {
-            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ForwardAsAttachmentToRecipientsAction.csv") -gt 0)
+            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ForwardAsAttachmentToRecipientsAction.csv".replace('\','/')) -gt 0)
             {
                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ForwardAsAttachmentToRecipientsAction.csv" -Delimiter ","
                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\UpdateInboxRules-ForwardAsAttachmentToRecipientsAction.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "ForwardAsAttachmentToRecipientsAction" -CellStyleSB {
@@ -1790,7 +1824,7 @@ if ($Count -gt 0)
         # XLSX
         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RedirectToRecipientsAction.csv")
         {
-            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RedirectToRecipientsAction.csv") -gt 0)
+            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RedirectToRecipientsAction.csv".replace('\','/')) -gt 0)
             {
                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RedirectToRecipientsAction.csv" -Delimiter "," | Sort-Object Identity -Unique | Sort-Object { $_.CreationDate -as [datetime] } -Descending
                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\UpdateInboxRules-RedirectToRecipientsAction.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "RedirectToRecipientsAction" -CellStyleSB {
@@ -1847,7 +1881,7 @@ if ($Count -gt 0)
     # Custom XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RedirectToRecipientsAction_Custom.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RedirectToRecipientsAction_Custom.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RedirectToRecipientsAction_Custom.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RedirectToRecipientsAction_Custom.csv" -Delimiter "," | Sort-Object Id -Unique | Sort-Object { $_.CreationDate -as [datetime] } -Descending
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\UpdateInboxRules-RedirectToRecipientsAction_Custom.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "RedirectToRecipientsAction" -CellStyleSB {
@@ -1886,7 +1920,7 @@ if ($Count -gt 0)
         # XLSX
         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-AddMailboxRule.csv")
         {
-            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-AddMailboxRule.csv") -gt 0)
+            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-AddMailboxRule.csv".replace('\','/')) -gt 0)
             {
                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-AddMailboxRule.csv" -Delimiter ","
                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\UpdateInboxRules-AddMailboxRule.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "AddMailboxRule" -CellStyleSB {
@@ -1922,7 +1956,7 @@ if ($Count -gt 0)
         # XLSX
         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ModifyMailboxRule.csv")
         {
-            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ModifyMailboxRule.csv") -gt 0)
+            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ModifyMailboxRule.csv".replace('\','/')) -gt 0)
             {
                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-ModifyMailboxRule.csv" -Delimiter ","
                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\UpdateInboxRules-ModifyMailboxRule.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "ModifyMailboxRule" -CellStyleSB {
@@ -1958,7 +1992,7 @@ if ($Count -gt 0)
         # XLSX
         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RemoveMailboxRule.csv")
         {
-            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RemoveMailboxRule.csv") -gt 0)
+            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RemoveMailboxRule.csv".replace('\','/')) -gt 0)
             {
                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\UpdateInboxRules-RemoveMailboxRule.csv" -Delimiter ","
                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\UpdateInboxRules-RemoveMailboxRule.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "RemoveMailboxRule" -CellStyleSB {
@@ -2017,7 +2051,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-Mailbox.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-Mailbox.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-Mailbox.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-Mailbox.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Set-Mailbox.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Set-Mailbox" -CellStyleSB {
@@ -2076,7 +2110,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-Mailbox_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-Mailbox_AuditData.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-Mailbox_AuditData.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-Mailbox_AuditData.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Set-Mailbox_AuditData.xlsx" -NoNumberConversion * -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Set-Mailbox" -CellStyleSB {
@@ -2143,7 +2177,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-MailboxJunkEmailConfiguration.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-MailboxJunkEmailConfiguration.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-MailboxJunkEmailConfiguration.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-MailboxJunkEmailConfiguration.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Set-MailboxJunkEmailConfiguration.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Junk E-Mail Rules" -CellStyleSB {
@@ -2206,7 +2240,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-MailboxJunkEmailConfiguration_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-MailboxJunkEmailConfiguration_AuditData.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-MailboxJunkEmailConfiguration_AuditData.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Set-MailboxJunkEmailConfiguration_AuditData.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Set-MailboxJunkEmailConfiguration_AuditData.xlsx" -NoNumberConversion * -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Junk E-Mail Rules" -CellStyleSB {
@@ -2236,6 +2270,16 @@ if ($Count -gt 0)
     Write-Host "[Alert] Suspicious Operation(s) detected: Add-MailboxPermission ($Count)" -ForegroundColor Red
     New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV" -ItemType Directory -Force | Out-Null
     New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX" -ItemType Directory -Force | Out-Null
+
+    # Create HashTable and import 'UserType.csv'
+    $UserType_HashTable = @{}
+    if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
+    {
+        if([int](& $xsv count "$SCRIPT_DIR\Config\UserType.csv".replace('\','/')) -gt 0)
+        {
+            Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
+        }
+    }
 
     # AuditData
     
@@ -2290,7 +2334,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-MailboxPermission.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-MailboxPermission.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-MailboxPermission.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-MailboxPermission.csv" -Delimiter "," -Encoding UTF8
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Add-MailboxPermission.xlsx" -NoNumberConversion * -FreezePane 2,6 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Add-MailboxPermission" -CellStyleSB {
@@ -2365,7 +2409,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-RecipientPermission.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-RecipientPermission.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-RecipientPermission.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-RecipientPermission.csv" -Delimiter "," -Encoding UTF8
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Add-RecipientPermission.xlsx" -NoNumberConversion * -FreezePane 2,6 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Add-RecipientPermission" -CellStyleSB {
@@ -2415,7 +2459,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboundConnector.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboundConnector.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboundConnector.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\New-InboundConnector.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\New-InboundConnector.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "New-InboundConnector" -CellStyleSB {
@@ -2459,7 +2503,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-service-principal.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-service-principal.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-service-principal.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-service-principal.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Add-service-principal.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Add service principal" -CellStyleSB {
@@ -2512,7 +2556,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-service-principal_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-service-principal_AuditData.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-service-principal_AuditData.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-service-principal_AuditData.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Add-service-principal_AuditData.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Add service principal" -CellStyleSB {
@@ -2548,7 +2592,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-delegated-permissions-grant.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-delegated-permissions-grant.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-delegated-permissions-grant.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-delegated-permissions-grant.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Add-delegated-permissions-grant.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Add delegated permissions grant" -CellStyleSB {
@@ -2611,7 +2655,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-delegated-permissions-grant_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-delegated-permissions-grant_AuditData.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-delegated-permissions-grant_AuditData.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-delegated-permissions-grant_AuditData.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Add-delegated-permissions-grant_AuditData.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Add delegated permission grant" -CellStyleSB {
@@ -2647,7 +2691,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-app-role-assignment-grant-to-user.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-app-role-assignment-grant-to-user.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-app-role-assignment-grant-to-user.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-app-role-assignment-grant-to-user.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Add-app-role-assignment-grant-to-user.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "App Role Assignment" -CellStyleSB {
@@ -2710,7 +2754,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-app-role-assignment-grant-to-user_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-app-role-assignment-grant-to-user_AuditData.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-app-role-assignment-grant-to-user_AuditData.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Add-app-role-assignment-grant-to-user_AuditData.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Add-app-role-assignment-grant-to-user_AuditData.xlsx" -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Add app role assignment grant" -CellStyleSB {
@@ -2749,7 +2793,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Consent-to-application.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Consent-to-application.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Consent-to-application.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Consent-to-application.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Consent-to-application.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Consent to application" -CellStyleSB {
@@ -2816,7 +2860,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Consent-to-application_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Consent-to-application_AuditData.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Consent-to-application_AuditData.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Consent-to-application_AuditData.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Consent-to-application_AuditData.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Consent to application." -CellStyleSB {
@@ -2855,7 +2899,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\HygieneTenantEvents.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\HygieneTenantEvents.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\HygieneTenantEvents.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\HygieneTenantEvents.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\HygieneTenantEvents.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "HygieneTenantEvents" -CellStyleSB {
@@ -2914,7 +2958,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\HygieneTenantEvents_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\HygieneTenantEvents_AuditData.csv") -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\HygieneTenantEvents_AuditData.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\HygieneTenantEvents_AuditData.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\HygieneTenantEvents_AuditData.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "HygieneTenantEvents" -CellStyleSB {
@@ -3153,7 +3197,7 @@ if (Test-Path "$($IPinfo)")
                         {
                             if (Test-Path "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo.csv".replace('\','/')) -gt 0)
                                 {
                                     $IPinfoRecords = Import-Csv "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo.csv" -Delimiter "," -Encoding UTF8
 
@@ -3184,7 +3228,7 @@ if (Test-Path "$($IPinfo)")
                             # Custom XLSX (Free)
                             if (Test-Path "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv".replace('\','/')) -gt 0)
                                 {
                                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv" -Delimiter "," | Sort-Object {$_.IP -as [Version]}
                                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -IncludePivotTable -PivotTableName "PivotTable" -PivotRows "Country Name" -PivotData @{"IP"="Count"} -WorkSheetname "IPinfo (Free)" -CellStyleSB {
@@ -3204,7 +3248,7 @@ if (Test-Path "$($IPinfo)")
                         {
                             if (Test-Path "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo.csv".replace('\','/')) -gt 0)
                                 {
                                     $IPinfoRecords = Import-Csv "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo.csv" -Delimiter "," -Encoding UTF8
                                 
@@ -3240,7 +3284,7 @@ if (Test-Path "$($IPinfo)")
                             # Custom XLSX (Privacy Detection)
                             if (Test-Path "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv".replace('\','/')) -gt 0)
                                 {
                                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv" -Delimiter "," | Sort-Object {$_.ip -as [Version]}
                                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -IncludePivotTable -PivotTableName "PivotTable" -PivotRows "Country Name" -PivotData @{"IP"="Count"} -WorkSheetname "IPinfo (Standard)" -CellStyleSB {
@@ -3285,7 +3329,7 @@ if (Test-Path "$($IPinfo)")
                         $script:IPinfo_HashTable = @{}
                         if (Test-Path "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv")
                         {
-                            if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv") -gt 0)
+                            if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv".replace('\','/')) -gt 0)
                             {
                                 # Free
                                 if ($PrivacyDetection -eq "False")
@@ -3312,7 +3356,7 @@ if (Test-Path "$($IPinfo)")
                         {
                             if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv".replace('\','/')) -gt 0)
                                 {
                                     $Records = Import-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv" -Delimiter "," -Encoding UTF8
 
@@ -3396,7 +3440,7 @@ if (Test-Path "$($IPinfo)")
                             # XLSX
                             if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv".replace('\','/')) -gt 0)
                                 {
                                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv" -Delimiter "," | Sort-Object { $_.CreationTime -as [datetime] } -Descending
                                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX\Hunt.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -IncludePivotTable -PivotTableName "PivotTable" -WorkSheetname "Hunt" -CellStyleSB {
@@ -3489,7 +3533,7 @@ if (Test-Path "$($IPinfo)")
                         {
                             if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv".replace('\','/')) -gt 0)
                                 {
                                     $Records = Import-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Custom.csv" -Delimiter "," -Encoding UTF8
 
@@ -3592,7 +3636,7 @@ if (Test-Path "$($IPinfo)")
                             # XLSX
                             if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv".replace('\','/')) -gt 0)
                                 {
                                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv" -Delimiter "," | Sort-Object { $_.CreationTime -as [datetime] } -Descending
                                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX\Hunt.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -IncludePivotTable -PivotTableName "PivotTable" -WorkSheetname "Hunt" -CellStyleSB {
@@ -3766,7 +3810,7 @@ if (Test-Path "$($IPinfo)")
                         $ApplicationBlacklist_HashTable = @{}
                         if (Test-Path "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv")
                         {
-                            if([int](& $xsv count "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv") -gt 0)
+                            if([int](& $xsv count "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv".replace('\','/')) -gt 0)
                             {
                                 Import-Csv "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv" -Delimiter "," | ForEach-Object { $ApplicationBlacklist_HashTable[$_.AppId] = $_.AppDisplayName,$_.Severity }
 
@@ -3824,7 +3868,7 @@ if (Test-Path "$($IPinfo)")
                         # Suspicious Operations
                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
                         {
-                            if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv") -gt 0)
+                            if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv".replace('\','/')) -gt 0)
                             {
                                 # UserLoginFailed
                                 # RecordType: AzureActiveDirectoryStsLogon --> Secure Token Service (STS) logon events in Azure Active Directory.
@@ -3845,7 +3889,7 @@ if (Test-Path "$($IPinfo)")
                                     # AzureActiveDirectoryStsLogon-UserLoginFailed-Overview.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\AzureActiveDirectoryStsLogon-UserLoginFailed-Overview.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\AzureActiveDirectoryStsLogon-UserLoginFailed-Overview.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\AzureActiveDirectoryStsLogon-UserLoginFailed-Overview.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\AzureActiveDirectoryStsLogon-UserLoginFailed-Overview.csv" -Delimiter ","
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\AzureActiveDirectoryStsLogon-UserLoginFailed-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "UserLoginFailed" -CellStyleSB {
@@ -3862,7 +3906,7 @@ if (Test-Path "$($IPinfo)")
                                     # AzureActiveDirectoryStsLogon-UserLoginFailed.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\AzureActiveDirectoryStsLogon-UserLoginFailed.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\AzureActiveDirectoryStsLogon-UserLoginFailed.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\AzureActiveDirectoryStsLogon-UserLoginFailed.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\AzureActiveDirectoryStsLogon-UserLoginFailed.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",ASN,OrgName,Timezone,Workload
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\AzureActiveDirectoryStsLogon-UserLoginFailed.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "UserLoginFailed" -CellStyleSB {
@@ -3907,6 +3951,16 @@ if (Test-Path "$($IPinfo)")
                             Write-Host "[Info]  $MoveToDeletedItems messages were moved to Deleted Items folder: MoveToDeletedItems"
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
+
+                            # Create HashTable and import 'UserType.csv'
+                            $UserType_HashTable = @{}
+                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
+                            {
+                                if([int](& $xsv count "$SCRIPT_DIR\Config\UserType.csv".replace('\','/')) -gt 0)
+                                {
+                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
+                                }
+                            }
 
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
@@ -3976,7 +4030,7 @@ if (Test-Path "$($IPinfo)")
                         # XLSX
                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\MoveToDeletedItems.csv")
                         {
-                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\MoveToDeletedItems.csv") -gt 0)
+                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\MoveToDeletedItems.csv".replace('\','/')) -gt 0)
                             {
                                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\MoveToDeletedItems.csv" -Delimiter "," -Encoding UTF8 | Sort-Object { $_.CreationTime -as [datetime] } -Descending
                                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\MoveToDeletedItems.xlsx" -NoNumberConversion * -FreezePane 2,6 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "MoveToDeletedItems" -CellStyleSB {
@@ -4024,6 +4078,16 @@ if (Test-Path "$($IPinfo)")
                             Write-Host "[Info]  $SoftDelete messages were deleted from Deleted Items folder: SoftDelete (AggregatedItems)"
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
+
+                            # Create HashTable and import 'UserType.csv'
+                            $UserType_HashTable = @{}
+                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
+                            {
+                                if([int](& $xsv count "$SCRIPT_DIR\Config\UserType.csv".replace('\','/')) -gt 0)
+                                {
+                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
+                                }
+                            }
 
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
@@ -4092,7 +4156,7 @@ if (Test-Path "$($IPinfo)")
                         # XLSX
                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SoftDelete.csv")
                         {
-                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SoftDelete.csv") -gt 0)
+                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SoftDelete.csv".replace('\','/')) -gt 0)
                             {
                                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SoftDelete.csv" -Delimiter "," -Encoding UTF8 | Sort-Object { $_.CreationTime -as [datetime] } -Descending
                                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\SoftDelete.xlsx" -NoNumberConversion * -NoHyperLinkConversion * -FreezePane 2,7 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SoftDelete" -CellStyleSB {
@@ -4162,6 +4226,16 @@ if (Test-Path "$($IPinfo)")
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
 
+                            # Create HashTable and import 'UserType.csv'
+                            $UserType_HashTable = @{}
+                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
+                            {
+                                if([int](& $xsv count "$SCRIPT_DIR\Config\UserType.csv".replace('\','/')) -gt 0)
+                                {
+                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
+                                }
+                            }
+
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
                             ForEach($Record in $Records)
@@ -4226,7 +4300,7 @@ if (Test-Path "$($IPinfo)")
                         # XLSX
                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\HardDelete.csv")
                         {
-                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\HardDelete.csv") -gt 0)
+                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\HardDelete.csv".replace('\','/')) -gt 0)
                             {
                                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\HardDelete.csv" -Delimiter "," -Encoding UTF8 | Sort-Object { $_.CreationTime -as [datetime] } -Descending
                                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\HardDelete.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,6 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "HardDelete" -CellStyleSB {
@@ -4274,6 +4348,26 @@ if (Test-Path "$($IPinfo)")
                             Write-Host "[Info]  $Send messages were sent, replied to or forwarded: Send"
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
+
+                            # Create HashTable and import 'UserType.csv'
+                            $UserType_HashTable = @{}
+                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
+                            {
+                                if([int](& $xsv count "$SCRIPT_DIR\Config\UserType.csv".replace('\','/')) -gt 0)
+                                {
+                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
+                                }
+                            }
+
+                            # Create HashTable and import 'LogonType.csv'
+                            $LogonType_HashTable = @{}
+                            if(Test-Path "$SCRIPT_DIR\Config\LogonType.csv")
+                            {
+                                if([int](& $xsv count "$SCRIPT_DIR\Config\LogonType.csv".replace('\','/')) -gt 0)
+                                {
+                                    Import-Csv "$SCRIPT_DIR\Config\LogonType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $LogonType_HashTable[$_.Value] = $_.LogonType }
+                                }
+                            }
 
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
@@ -4346,7 +4440,7 @@ if (Test-Path "$($IPinfo)")
                         # XLSX
                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\Send.csv")
                         {
-                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\Send.csv") -gt 0)
+                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\Send.csv".replace('\','/')) -gt 0)
                             {
                                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\Send.csv" -Delimiter "," -Encoding UTF8 | Sort-Object { $_.CreationTime -as [datetime] } -Descending
                                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\Send.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,6 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Send" -CellStyleSB {
@@ -4380,6 +4474,26 @@ if (Test-Path "$($IPinfo)")
                             Write-Host "[Info]  $SendAs messages were sent using SendAs permisisons: SendAs"
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
+
+                            # Create HashTable and import 'UserType.csv'
+                            $UserType_HashTable = @{}
+                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
+                            {
+                                if([int](& $xsv count "$SCRIPT_DIR\Config\UserType.csv".replace('\','/')) -gt 0)
+                                {
+                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
+                                }
+                            }
+
+                            # Create HashTable and import 'LogonType.csv'
+                            $LogonType_HashTable = @{}
+                            if(Test-Path "$SCRIPT_DIR\Config\LogonType.csv")
+                            {
+                                if([int](& $xsv count "$SCRIPT_DIR\Config\LogonType.csv".replace('\','/')) -gt 0)
+                                {
+                                    Import-Csv "$SCRIPT_DIR\Config\LogonType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $LogonType_HashTable[$_.Value] = $_.LogonType }
+                                }
+                            }
 
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
@@ -4453,7 +4567,7 @@ if (Test-Path "$($IPinfo)")
                         # XLSX
                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SendAs.csv")
                         {
-                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SendAs.csv") -gt 0)
+                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SendAs.csv".replace('\','/')) -gt 0)
                             {
                                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SendAs.csv" -Delimiter "," -Encoding UTF8 | Sort-Object { $_.CreationTime -as [datetime] } -Descending
                                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\SendAs.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,6 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SendAs" -CellStyleSB {
@@ -4489,6 +4603,26 @@ if (Test-Path "$($IPinfo)")
                             Write-Host "[Info]  $SendOnBehalf messages were sent using SendOnBehalf permisisons: SendOnBehalf"
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
+
+                            # Create HashTable and import 'UserType.csv'
+                            $UserType_HashTable = @{}
+                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
+                            {
+                                if([int](& $xsv count "$SCRIPT_DIR\Config\UserType.csv".replace('\','/')) -gt 0)
+                                {
+                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
+                                }
+                            }
+
+                            # Create HashTable and import 'LogonType.csv'
+                            $LogonType_HashTable = @{}
+                            if(Test-Path "$SCRIPT_DIR\Config\LogonType.csv")
+                            {
+                                if([int](& $xsv count "$SCRIPT_DIR\Config\LogonType.csv".replace('\','/')) -gt 0)
+                                {
+                                    Import-Csv "$SCRIPT_DIR\Config\LogonType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $LogonType_HashTable[$_.Value] = $_.LogonType }
+                                }
+                            }
 
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
@@ -4563,7 +4697,7 @@ if (Test-Path "$($IPinfo)")
                         # XLSX
                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SendOnBehalf.csv")
                         {
-                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SendOnBehalf.csv") -gt 0)
+                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SendOnBehalf.csv".replace('\','/')) -gt 0)
                             {
                                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\SendOnBehalf.csv" -Delimiter "," -Encoding UTF8 | Sort-Object { $_.CreationTime -as [datetime] } -Descending
                                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\SendOnBehalf.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,6 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SendOnBehalf" -CellStyleSB {
@@ -4588,7 +4722,7 @@ if (Test-Path "$($IPinfo)")
                         # https://learn.microsoft.com/en-us/office/office-365-management-api/office-365-management-activity-api-schema
                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
                         {
-                            if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv") -gt 0)
+                            if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv".replace('\','/')) -gt 0)
                             {
                                 # Suspicious Mailbox Action(s) detected: Multiple email messages were deleted and moved to the 'Deleted Items' folder
                                 # RecordType: ExchangeItemGroup --> Events from an Exchange mailbox audit log for actions that can be performed on multiple items, such as moving or deleted one or more email messages.
@@ -4609,7 +4743,7 @@ if (Test-Path "$($IPinfo)")
                                     # ExchangeItemGroup-MoveToDeletedItems-Overview.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-MoveToDeletedItems-Overview.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-MoveToDeletedItems-Overview.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-MoveToDeletedItems-Overview.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-MoveToDeletedItems-Overview.csv" -Delimiter ","
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItemGroup-MoveToDeletedItems-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "MoveToDeletedItems" -CellStyleSB {
@@ -4626,7 +4760,7 @@ if (Test-Path "$($IPinfo)")
                                     # ExchangeItemGroup-MoveToDeletedItems.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-MoveToDeletedItems.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-MoveToDeletedItems.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-MoveToDeletedItems.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-MoveToDeletedItems.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",ASN,OrgName,Timezone,Workload
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItemGroup-MoveToDeletedItems.xlsx" -NoNumberConversion * -NoHyperLinkConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "MoveToDeletedItems" -CellStyleSB {
@@ -4663,7 +4797,7 @@ if (Test-Path "$($IPinfo)")
                                     # ExchangeItemGroup-SoftDelete-Overview.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-SoftDelete-Overview.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-SoftDelete-Overview.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-SoftDelete-Overview.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-SoftDelete-Overview.csv" -Delimiter ","
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItemGroup-SoftDelete-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SoftDelete" -CellStyleSB {
@@ -4680,7 +4814,7 @@ if (Test-Path "$($IPinfo)")
                                     # ExchangeItemGroup-SoftDelete.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-SoftDelete.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-SoftDelete.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-SoftDelete.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-SoftDelete.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",ASN,OrgName,Timezone,Workload
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItemGroup-SoftDelete.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SoftDelete" -CellStyleSB {
@@ -4717,7 +4851,7 @@ if (Test-Path "$($IPinfo)")
                                     # ExchangeItemGroup-HardDelete-Overview.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-HardDelete-Overview.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-HardDelete-Overview.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-HardDelete-Overview.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-HardDelete-Overview.csv" -Delimiter ","
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItemGroup-HardDelete-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "HardDelete" -CellStyleSB {
@@ -4734,7 +4868,7 @@ if (Test-Path "$($IPinfo)")
                                     # ExchangeItemGroup-HardDelete.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-HardDelete.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-HardDelete.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-HardDelete.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-HardDelete.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",ASN,OrgName,Timezone,Workload
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItemGroup-HardDelete.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "HardDelete" -CellStyleSB {
@@ -4778,7 +4912,7 @@ if (Test-Path "$($IPinfo)")
                                         # ExchangeItem-HardDelete-Overview.xlsx
                                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-HardDelete-Overview.csv")
                                         {
-                                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-HardDelete-Overview.csv") -gt 0)
+                                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-HardDelete-Overview.csv".replace('\','/')) -gt 0)
                                             {
                                                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-HardDelete-Overview.csv" -Delimiter ","
                                                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItem-HardDelete-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "HardDelete" -CellStyleSB {
@@ -4795,7 +4929,7 @@ if (Test-Path "$($IPinfo)")
                                         # ExchangeItem-HardDelete.xlsx
                                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-HardDelete.csv")
                                         {
-                                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-HardDelete.csv") -gt 0)
+                                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-HardDelete.csv".replace('\','/')) -gt 0)
                                             {
                                                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-HardDelete.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",EU,Location,ASN,OrgName,"Postal Code",Timezone,Workload
                                                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItem-HardDelete.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "HardDelete" -CellStyleSB {
@@ -4832,7 +4966,7 @@ if (Test-Path "$($IPinfo)")
                                         # ExchangeItem-SendAs-Overview.xlsx
                                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-SendAs-Overview.csv")
                                         {
-                                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-SendAs-Overview.csv") -gt 0)
+                                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-SendAs-Overview.csv".replace('\','/')) -gt 0)
                                             {
                                                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-SendAs-Overview.csv" -Delimiter ","
                                                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItem-SendAs-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SendAs" -CellStyleSB {
@@ -4849,7 +4983,7 @@ if (Test-Path "$($IPinfo)")
                                         # ExchangeItem-SendAs.xlsx
                                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-SendAs.csv")
                                         {
-                                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-SendAs.csv") -gt 0)
+                                            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-SendAs.csv".replace('\','/')) -gt 0)
                                             {
                                                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-SendAs.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",EU,Location,ASN,OrgName,"Postal Code",Timezone,Workload
                                                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItem-SendAs.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SendAs" -CellStyleSB {
@@ -4885,7 +5019,7 @@ if (Test-Path "$($IPinfo)")
                                             # ExchangeItem-Update-Overview.xlsx
                                             if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-Update-Overview.csv")
                                             {
-                                                if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-Update-Overview.csv") -gt 0)
+                                                if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-Update-Overview.csv".replace('\','/')) -gt 0)
                                                 {
                                                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-Update-Overview.csv" -Delimiter ","
                                                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItem-Update-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Update" -CellStyleSB {
@@ -4902,7 +5036,7 @@ if (Test-Path "$($IPinfo)")
                                             # ExchangeItem-Update.xlsx
                                             if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-Update.csv")
                                             {
-                                                if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-Update.csv") -gt 0)
+                                                if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-Update.csv".replace('\','/')) -gt 0)
                                                 {
                                                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItem-Update.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",EU,Location,ASN,OrgName,"Postal Code",Timezone,Workload
                                                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItem-Update.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Update" -CellStyleSB {
@@ -4930,7 +5064,7 @@ if (Test-Path "$($IPinfo)")
                         # https://learn.microsoft.com/en-us/purview/audit-log-activities
                         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
                         {
-                            if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv") -gt 0)
+                            if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv".replace('\','/')) -gt 0)
                             {
                                 # Suspicious SharePointSharingOperations
 
@@ -4953,7 +5087,7 @@ if (Test-Path "$($IPinfo)")
                                     # SharePointSharingOperation-SharingInvitationCreated-Overview.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingInvitationCreated-Overview.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingInvitationCreated-Overview.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingInvitationCreated-Overview.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingInvitationCreated-Overview.csv" -Delimiter ","
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointSharingOperation-SharingInvitationCreated-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SharingInvitationCreated" -CellStyleSB {
@@ -4970,7 +5104,7 @@ if (Test-Path "$($IPinfo)")
                                     # SharePointSharingOperation-SharingInvitationCreated.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingInvitationCreated.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingInvitationCreated.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingInvitationCreated.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingInvitationCreated.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",EU,Location,ASN,OrgName,"Postal Code",Timezone,Workload
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointSharingOperation-SharingInvitationCreated.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SharingInvitationCreated" -CellStyleSB {
@@ -5015,7 +5149,7 @@ if (Test-Path "$($IPinfo)")
                                     # SharePointSharingOperation-AddedToSecureLink-Overview.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-AddedToSecureLink-Overview.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-AddedToSecureLink-Overview.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-AddedToSecureLink-Overview.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-AddedToSecureLink-Overview.csv" -Delimiter ","
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointSharingOperation-AddedToSecureLink-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "AddedToSecureLink" -CellStyleSB {
@@ -5032,7 +5166,7 @@ if (Test-Path "$($IPinfo)")
                                     # SharePointSharingOperation-AddedToSecureLink.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-AddedToSecureLink.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-AddedToSecureLink.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-AddedToSecureLink.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-AddedToSecureLink.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",ASN,OrgName,Timezone,Workload,UniqueTokenId
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointSharingOperation-AddedToSecureLink.xlsx" -NoNumberConversion * -NoHyperLinkConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "AddedToSecureLink" -CellStyleSB {
@@ -5076,7 +5210,7 @@ if (Test-Path "$($IPinfo)")
                                     # XLSX
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkCreated.csv")
                                     {
-                                        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkCreated.csv") -gt 0)
+                                        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkCreated.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkCreated.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",ASN,OrgName,Timezone,Workload,UniqueTokenId
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointSharingOperation-SecureLinkCreated.xlsx" -NoNumberConversion * -NoHyperLinkConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SecureLinkCreated" -CellStyleSB {
@@ -5122,7 +5256,7 @@ if (Test-Path "$($IPinfo)")
                                     # SharePointSharingOperation-SecureLinkUpdated-Overview.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkUpdated-Overview.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkUpdated-Overview.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkUpdated-Overview.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkUpdated-Overview.csv" -Delimiter ","
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointSharingOperation-SecureLinkUpdated-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SecureLinkUpdated" -CellStyleSB {
@@ -5139,7 +5273,7 @@ if (Test-Path "$($IPinfo)")
                                     # SharePointSharingOperation-SecureLinkUpdated.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkUpdated.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkUpdated.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkUpdated.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SecureLinkUpdated.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",ASN,OrgName,Timezone,Workload,UniqueTokenId
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointSharingOperation-SecureLinkUpdated.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SecureLinkUpdated" -CellStyleSB {
@@ -5184,7 +5318,7 @@ if (Test-Path "$($IPinfo)")
                                     # SharePointSharingOperation-SharingSet-Overview.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingSet-Overview.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingSet-Overview.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingSet-Overview.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingSet-Overview.csv" -Delimiter ","
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointSharingOperation-SharingSet-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SharingSet" -CellStyleSB {
@@ -5201,7 +5335,7 @@ if (Test-Path "$($IPinfo)")
                                     # SharePointSharingOperation-SharingSet.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingSet.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingSet.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingSet.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointSharingOperation-SharingSet.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",ASN,OrgName,Timezone,Workload,UniqueTokenId
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointSharingOperation-SharingSet.xlsx" -NoNumberConversion * -NoHyperLinkConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "SharingSet" -CellStyleSB {
@@ -5247,7 +5381,7 @@ if (Test-Path "$($IPinfo)")
                                     # XLSX
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileUploaded.csv")
                                     {
-                                        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileUploaded.csv") -gt 0)
+                                        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileUploaded.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileUploaded.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",ASN,OrgName,Timezone,Workload,UniqueTokenId
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointFileOperation-FileUploaded.xlsx" -NoNumberConversion * -NoHyperLinkConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "FileUploaded" -CellStyleSB {
@@ -5293,7 +5427,7 @@ if (Test-Path "$($IPinfo)")
                                     # SharePointFileOperation-FileDownloaded-Overview.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileDownloaded-Overview.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileDownloaded-Overview.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileDownloaded-Overview.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileDownloaded-Overview.csv" -Delimiter ","
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointFileOperation-FileDownloaded-Overview.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "FileDownloaded" -CellStyleSB {
@@ -5310,7 +5444,7 @@ if (Test-Path "$($IPinfo)")
                                     # SharePointFileOperation-FileDownloaded.xlsx
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileDownloaded.csv")
                                     {
-                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileDownloaded.csv") -gt 0)
+                                        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileDownloaded.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileDownloaded.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",EU,Location,ASN,OrgName,"Postal Code",Timezone,Workload
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointFileOperation-FileDownloaded.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "FileDownloaded" -CellStyleSB {
@@ -5357,7 +5491,7 @@ if (Test-Path "$($IPinfo)")
                                     # XLSX
                                     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileAccessedExtended.csv")
                                     {
-                                        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileAccessedExtended.csv") -gt 0)
+                                        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileAccessedExtended.csv".replace('\','/')) -gt 0)
                                         {
                                             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\CSV\SharePointFileOperation-FileAccessedExtended.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",ASN,OrgName,Timezone,Workload,UniqueTokenId
                                             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-SharePoint-Actions\XLSX\SharePointFileOperation-FileAccessedExtended.xlsx" -NoNumberConversion * -NoHyperLinkConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "FileAccessedExtended" -CellStyleSB {
@@ -5459,6 +5593,36 @@ $AuditData = $UserLoggedInRecords | Select-Object -ExpandProperty AuditData | Co
 
 New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV" -ItemType Directory -Force | Out-Null
 New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX" -ItemType Directory -Force | Out-Null
+
+# Create HashTable and import 'Status.csv'
+$ErrorNumber_HashTable = @{}
+if(Test-Path "$SCRIPT_DIR\Config\Status.csv")
+{
+    if([int](& $xsv count "$SCRIPT_DIR\Config\Status.csv".replace('\','/')) -gt 0)
+    {
+        Import-Csv "$SCRIPT_DIR\Config\Status.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $ErrorNumber_HashTable[$_.ErrorCode] = $_.Status, $_.Message }
+    }
+}
+
+# Create HashTable and import 'TrustType.csv'
+$TrustType_HashTable = @{}
+if(Test-Path "$SCRIPT_DIR\Config\TrustType.csv")
+{
+    if([int](& $xsv count "$SCRIPT_DIR\Config\TrustType.csv".replace('\','/')) -gt 0)
+    {
+        Import-Csv "$SCRIPT_DIR\Config\TrustType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $TrustType_HashTable[$_.Value] = $_.Description }
+    }
+}
+
+# Create HashTable and import 'UserType.csv'
+$UserType_HashTable = @{}
+if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
+{
+    if([int](& $xsv count "$SCRIPT_DIR\Config\UserType.csv".replace('\','/')) -gt 0)
+    {
+        Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
+    }
+}
 
 # IPinfo Subscription: Free
 if ($PrivacyDetection -eq "False")
@@ -5642,7 +5806,7 @@ if ($PrivacyDetection -eq "False")
     # UserLoggedIn.xlsx
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv" -Delimiter "," -Encoding UTF8
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX\UserLoggedIn.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "UserLoggedIn" -CellStyleSB {
@@ -5918,7 +6082,7 @@ if ($PrivacyDetection -eq "True")
     # UserLoggedIn.xlsx
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv" -Delimiter "," -Encoding UTF8
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX\UserLoggedIn.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "UserLoggedIn" -CellStyleSB {
@@ -5997,6 +6161,36 @@ $AuditData = $UserLoginFailedRecords | Select-Object -ExpandProperty AuditData |
 
 New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV" -ItemType Directory -Force | Out-Null
 New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX" -ItemType Directory -Force | Out-Null
+
+# Create HashTable and import 'Status.csv'
+$ErrorNumber_HashTable = @{}
+if(Test-Path "$SCRIPT_DIR\Config\Status.csv")
+{
+    if([int](& $xsv count "$SCRIPT_DIR\Config\Status.csv".replace('\','/')) -gt 0)
+    {
+        Import-Csv "$SCRIPT_DIR\Config\Status.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $ErrorNumber_HashTable[$_.ErrorCode] = $_.Status, $_.Message }
+    }
+}
+
+# Create HashTable and import 'TrustType.csv'
+$TrustType_HashTable = @{}
+if(Test-Path "$SCRIPT_DIR\Config\TrustType.csv")
+{
+    if([int](& $xsv count "$SCRIPT_DIR\Config\TrustType.csv".replace('\','/')) -gt 0)
+    {
+        Import-Csv "$SCRIPT_DIR\Config\TrustType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $TrustType_HashTable[$_.Value] = $_.Description }
+    }
+}
+
+# Create HashTable and import 'UserType.csv'
+$UserType_HashTable = @{}
+if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
+{
+    if([int](& $xsv count "$SCRIPT_DIR\Config\UserType.csv".replace('\','/')) -gt 0)
+    {
+        Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
+    }
+}
 
 # IPinfo Subscription: Free
 if ($PrivacyDetection -eq "False")
@@ -6177,7 +6371,7 @@ if ($PrivacyDetection -eq "False")
     # UserLoginFailed.xlsx
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv" -Delimiter "," -Encoding UTF8
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX\UserLoginFailed.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "UserLoginFailed" -CellStyleSB {
@@ -6445,7 +6639,7 @@ if ($PrivacyDetection -eq "True")
     # UserLoginFailed.xlsx
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv" -Delimiter "," -Encoding UTF8
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX\UserLoginFailed.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "UserLoginFailed" -CellStyleSB {
@@ -6511,7 +6705,7 @@ if ($PrivacyDetection -eq "True")
 # CmsiInterrupt - For security reasons, user confirmation is required for this request.
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv")
 {
-    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv") -gt 0)
+    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv".replace('\','/')) -gt 0)
     {
         $Import = Import-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv" -Delimiter "," | Where-Object { $_.LogonError -eq "CmsiInterrupt" } | Where-Object { $_.ErrorNumber -eq "50199" } | Sort-Object { $_.CreationTime -as [datetime] } -Descending
         $Count = [string]::Format('{0:N0}',($Import | Measure-Object).Count)
@@ -6528,7 +6722,7 @@ if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv")
             # XLSX
             if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\DeviceCode\CSV\Failed-DeviceCode-Authentication.csv")
             {
-                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\DeviceCode\CSV\Failed-DeviceCode-Authentication.csv") -gt 0)
+                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\DeviceCode\CSV\Failed-DeviceCode-Authentication.csv".replace('\','/')) -gt 0)
                 {
                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\DeviceCode\CSV\Failed-DeviceCode-Authentication.csv" -Delimiter "," -Encoding UTF8
                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\DeviceCode\XLSX\Failed-DeviceCode-Authentication.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Failed DeviceCode Auth" -CellStyleSB {
@@ -6554,7 +6748,7 @@ if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoginFailed.csv")
 # AiTM Proxy Server
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
 {
-    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv") -gt 0)
+    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv".replace('\','/')) -gt 0)
     {
         $Import = Import-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv" -Delimiter "," | Where-Object { $_.ClientInfoString -eq "Client=OWA;Action=ViaProxy" } | Where-Object { $_.ASN -notmatch ($Whitelist) } | Sort-Object { $_.CreationTime -as [datetime] } -Descending
         $Count = [string]::Format('{0:N0}',($Import | Measure-Object).Count)
@@ -6569,7 +6763,7 @@ if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
 # eM Client
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
 {
-    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv") -gt 0)
+    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv".replace('\','/')) -gt 0)
     {
         $Import = Import-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv" -Delimiter "," -Encoding UTF8 | Where-Object { $_.ClientInfoString -match "Client=WebServices;eM Client" } | Sort-Object { $_.CreationTime -as [datetime] } -Descending
         $Count = [string]::Format('{0:N0}',($Import | Measure-Object).Count)
@@ -6586,7 +6780,7 @@ if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
 # Hunting for Session Cookie Theft --> Initial Access [TA0001]
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv")
 {
-    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv") -gt 0)
+    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv".replace('\','/')) -gt 0)
     {
         Write-Output "[Info]  Hunting for Session Cookie Theft ..."
 
@@ -6643,7 +6837,7 @@ if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv")
 # XLSX
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Suspicious-SessionIds.csv")
 {
-    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Suspicious-SessionIds.csv") -gt 0)
+    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Suspicious-SessionIds.csv".replace('\','/')) -gt 0)
     {
         $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Suspicious-SessionIds.csv" -Delimiter "," | Sort-Object @{Expression={ $_."ClientIP" -as [Int] }} -Descending
         $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX\Suspicious-SessionIds.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Suspicious SessionIds" -CellStyleSB {
@@ -6681,7 +6875,7 @@ else
 # Sessions (Duration)
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
 {
-    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv") -gt 0)
+    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv".replace('\','/')) -gt 0)
     {
         $SessionIds = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv" -Delimiter "," | Where-Object { $_.Operation -eq "UserLoggedIn" } | Where-Object { $_.SessionId -ne "" } | Select-Object -ExpandProperty SessionId -Unique
 
@@ -6712,7 +6906,7 @@ if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
 # XLSX
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\SessionIds-Duration.csv")
 {
-    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\SessionIds-Duration.csv") -gt 0)
+    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\SessionIds-Duration.csv".replace('\','/')) -gt 0)
     {
         $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\SessionIds-Duration.csv" -Delimiter "," | Sort-Object { $_.StartDate -as [datetime] } -Descending
         $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX\SessionIds-Duration.xlsx" -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Sessions" -CellStyleSB {
@@ -6835,7 +7029,7 @@ Function Find-AiTMSuspiciousUserLogin
 # Find-AiTMSuspiciousUserLogin
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv")
 {
-    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv") -gt 0)
+    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv".replace('\','/')) -gt 0)
     {
         $Analyzed = Import-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv" -Delimiter "," -Encoding UTF8 | Sort-Object -Descending CreationTime| Find-AiTMSuspiciousUserLogin       
         $Suspicious = $Analyzed | Where-Object -Property "#Suspicious" | Select-Object @{Name="Suspicious"; Expression={$_."#Suspicious"}},CreationTime,Id,UserId,UserType,RecordType,Operation,ObjectId,ClientIP,UserAgent,RequestType,ResultStatusDetail,City,Region,Country,"Country Name",ASN,OrgName,ApplicationId,DeviceName,DeviceId,OS,BrowserType,TrustType,IsCompliant,IsCompliantAndManaged,SessionId,InterSystemsId,ErrorNumber,Message
@@ -6849,7 +7043,7 @@ if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\UserLoggedIn.csv")
         # XLSX
         if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Find-AiTMSuspiciousUserLogin.csv")
         {
-            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Find-AiTMSuspiciousUserLogin.csv") -gt 0)
+            if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Find-AiTMSuspiciousUserLogin.csv".replace('\','/')) -gt 0)
             {
                 $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Find-AiTMSuspiciousUserLogin.csv" -Delimiter "," -Encoding UTF8 | Sort-Object { $_.CreationTime -as [datetime] } -Descending
                 $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX\Find-AiTMSuspiciousUserLogin.xlsx" -NoNumberConversion * -NoHyperLinkConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "AiTMSuspiciousUserLogin" -CellStyleSB {
@@ -6951,7 +7145,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Untouched.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Untouched.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Untouched.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Untouched.csv" -Delimiter "," -Encoding UTF8 | Select-Object CreationDate,UserIds,RecordType,Operations,AuditData,ResultIndex,ResultCount,Identity,IsValid,ObjectState
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\XLSX\Untouched.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "MailItemsAccessed" -CellStyleSB {
@@ -7024,7 +7218,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\MailItemsAccessed.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\MailItemsAccessed.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\MailItemsAccessed.csv".replace('\','/')) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\MailItemsAccessed.csv" -Delimiter "," -Encoding UTF8
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\XLSX\MailItemsAccessed.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "MailItemsAccessed" -CellStyleSB {
@@ -7424,7 +7618,7 @@ if ($Count -gt 0)
     $IPinfo_HashTable = @{}
     if (Test-Path "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\ClientIP\IPinfo\IPinfo-Custom.csv".replace('\','/')) -gt 0)
         {
             # Free
             if ($PrivacyDetection -eq "False")
@@ -7447,7 +7641,7 @@ if ($Count -gt 0)
     # Hunt
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\MailItemsAccessed.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\MailItemsAccessed.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\MailItemsAccessed.csv".replace('\','/')) -gt 0)
         {
             $Records = Import-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\MailItemsAccessed.csv" -Delimiter "," -Encoding UTF8
 
@@ -7530,7 +7724,7 @@ if ($Count -gt 0)
             # XLSX
             if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Hunt.csv")
             {
-                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Hunt.csv") -gt 0)
+                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Hunt.csv".replace('\','/')) -gt 0)
                 {
                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Hunt.csv" -Delimiter ","
                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\XLSX\Hunt.xlsx" -NoNumberConversion * -FreezePane 2,2 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Hunt" -CellStyleSB {
@@ -7585,7 +7779,7 @@ if ($Count -gt 0)
             # AppId / AppDisplayName (Stats)
             if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Hunt.csv")
             {
-                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Hunt.csv") -gt 0)
+                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Hunt.csv".replace('\','/')) -gt 0)
                 {
                     $Import = Import-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Hunt.csv" -Delimiter "," -Encoding UTF8 | Where-Object { $_.AppId -ne '' }
                     $Total = ($Import | Select-Object -ExpandProperty OperationCount | Measure-Object -Sum).Sum
@@ -7752,7 +7946,7 @@ if ($Count -gt 0)
             # IsThrottled --> Mailbox Synchronisation for Offline Usage / Exfiltration
             if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Hunt.csv")
             {
-                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Hunt.csv") -gt 0)
+                if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\CSV\Hunt.csv".replace('\','/')) -gt 0)
                 {
                     $Import = Import-Csv -Path "$LogFile" -Delimiter "," | Where-Object { $_.IsThrottled -eq "True" } | Sort-Object { $_.CreationTime -as [datetime] } -Descending
                     $Count = [string]::Format('{0:N0}',($Import | Measure-Object).Count)
@@ -7909,7 +8103,7 @@ $Results | Sort-Object { $_.CreationTime -as [datetime] } -Descending | Export-C
 # MicrosoftTeams.xlsx
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MicrosoftTeams.csv")
 {
-    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MicrosoftTeams.csv") -gt 0)
+    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MicrosoftTeams.csv".replace('\','/')) -gt 0)
     {
         $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MicrosoftTeams.csv" -Delimiter ","
         $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\XLSX\MicrosoftTeams.xlsx" -NoNumberConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "MicrosoftTeams" -CellStyleSB {
@@ -8077,7 +8271,7 @@ $Results | Sort-Object { $_.CreationTime -as [datetime] } -Descending | Export-C
 # MessageSent.xlsx
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MessageSent.csv")
 {
-    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MessageSent.csv") -gt 0)
+    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MessageSent.csv".replace('\','/')) -gt 0)
     {
         $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MessageSent.csv" -Delimiter "," -Encoding UTF8
         $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\XLSX\MessageSent.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "MessageSent" -CellStyleSB {
@@ -8158,7 +8352,7 @@ $Results | Sort-Object { $_.CreationTime -as [datetime] } -Descending | Export-C
 # MessageCreatedHasLink.xlsx
 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MessageCreatedHasLink.csv")
 {
-    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MessageCreatedHasLink.csv") -gt 0)
+    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MessageCreatedHasLink.csv".replace('\','/')) -gt 0)
     {
         $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\CSV\MessageCreatedHasLink.csv" -Delimiter "," -Encoding UTF8
         $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\MicrosoftTeams\XLSX\MessageCreatedHasLink.xlsx" -NoNumberConversion * -NoHyperLinkConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "MessageCreatedHasLink" -CellStyleSB {

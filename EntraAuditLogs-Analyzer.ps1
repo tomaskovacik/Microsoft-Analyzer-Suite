@@ -130,7 +130,11 @@ $script:Orange = [System.Drawing.Color]::FromArgb(255,192,0) # Orange
 # Output Directory
 if (!($OutputDir))
 {
-    $script:OUTPUT_FOLDER = "$env:USERPROFILE\Desktop\EntraAuditLogs-Analyzer" # Default
+if ($isWindows){
+	$script:OUTPUT_FOLDER = "$env:USERPROFILE\Desktop\EntraAuditLogs-Analyzer" # Default
+} else {
+	$script:OUTPUT_FOLDER = "Output\EntraAuditLogs-Analyzer" # Default
+}
 }
 else
 {
@@ -148,10 +152,21 @@ else
 # Tools
 
 # IPinfo CLI
+if ($isWindows){
 $script:IPinfo = "$SCRIPT_DIR\Tools\IPinfo\ipinfo.exe"
+} else {
+$script:IPinfo = "ipinfo"
+}
 
 # xsv
+if ($isWindows){
 $script:xsv = "$SCRIPT_DIR\Tools\xsv\xsv.exe"
+$script:dirDeli='\'
+} else {
+$script:xsv = "xsv"
+$script:dirDeli='/'
+}
+
 
 # Configuration File
 if(!(Test-Path "$PSScriptRoot\Config.ps1"))
@@ -170,13 +185,14 @@ else
 
 #region Header
 
+if ($IsWindows){
 # Check if the PowerShell script is being run with admin rights
 if (!([Security.Principal.WindowsPrincipal] [Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))
 {
     Write-Host "[Error] This PowerShell script must be run with admin rights." -ForegroundColor Red
     Exit
 }
-
+}
 # Check if PowerShell module 'ImportExcel' is installed
 if (!(Get-Module -ListAvailable -Name ImportExcel))
 {
@@ -186,8 +202,10 @@ if (!(Get-Module -ListAvailable -Name ImportExcel))
 }
 
 # Windows Title
-$DefaultWindowsTitle = $Host.UI.RawUI.WindowTitle
-$Host.UI.RawUI.WindowTitle = "EntraAuditLogs-Analyzer - Automated Processing of Microsoft Entra ID Audit Logs for DFIR"
+if ($IsWindows){
+	$DefaultWindowsTitle = $Host.UI.RawUI.WindowTitle
+	$Host.UI.RawUI.WindowTitle = "EntraAuditLogs-Analyzer - Automated Processing of Microsoft Entra ID Audit Logs for DFIR"
+}
 
 # Flush Output Directory
 if (Test-Path "$OUTPUT_FOLDER")
@@ -281,7 +299,7 @@ Write-Output ""
 $script:ApplicationBlacklist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv") -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv".replace('\',$dirDeli)) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv" -Delimiter "," | ForEach-Object { $ApplicationBlacklist_HashTable[$_.AppId] = $_.AppDisplayName,$_.Severity }
     }
@@ -291,7 +309,7 @@ if (Test-Path "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv")
 $script:AsnBlacklist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Blacklists\ASN-Blacklist.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\ASN-Blacklist.csv") -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\ASN-Blacklist.csv".replace('\',$dirDeli)) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Blacklists\ASN-Blacklist.csv" -Delimiter "," | ForEach-Object { $AsnBlacklist_HashTable[$_.ASN] = $_.OrgName,$_.Info }
     }
@@ -311,7 +329,7 @@ if (Test-Path "$SCRIPT_DIR\Blacklists\Country-Blacklist.csv")
 $script:UserAgentBlacklist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Blacklists\UserAgent-Blacklist.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\UserAgent-Blacklist.csv") -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\UserAgent-Blacklist.csv".replace('\',$dirDeli)) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Blacklists\UserAgent-Blacklist.csv" -Delimiter "," | ForEach-Object { $UserAgentBlacklist_HashTable[$_.UserAgent] = $_.Category,$_.Severity }
 
@@ -498,11 +516,10 @@ ForEach($Record in $Data)
 }
 
 $Results | Export-Csv -Path "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv" -NoTypeInformation -Encoding UTF8
-
 # XLSX
 if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv")
 {
-    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv") -gt 0)
+    if([int](& $xsv count -d "," "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv".replace('\',$dirDeli)) -gt 0)
     {
         $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv" -Delimiter "," -Encoding UTF8
         $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\XLSX\Untouched.xlsx" -NoNumberConversion * -NoHyperLinkConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "EntraAuditLogs" -CellStyleSB {
@@ -789,7 +806,7 @@ $StartTime_IPLocation = (Get-Date)
 
 # Count IP addresses
 Write-Output "[Info]  Data Enrichment w/ IPinfo.io ..."
-New-Item "$OUTPUT_FOLDER\IpAddress" -ItemType Directory -Force | Out-Null
+New-Item "$OUTPUT_FOLDER\IPAddress" -ItemType Directory -Force | Out-Null
 
 if (!(Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv"))
 {
@@ -895,7 +912,7 @@ if (Test-Path "$($IPinfo)")
         if ((Get-Item "$OUTPUT_FOLDER\IPAddress\IP.txt").Length -gt 0kb)
         {
             # Internet Connectivity Check (Vista+)
-            $NetworkListManager = [Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]'{DCB00C01-570F-4A9B-8D69-199FDBA5723B}')).IsConnectedToInternet
+            $NetworkListManager = "True"#[Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]'{DCB00C01-570F-4A9B-8D69-199FDBA5723B}')).IsConnectedToInternet
 
             if (!($NetworkListManager -eq "True"))
             {
@@ -904,7 +921,8 @@ if (Test-Path "$($IPinfo)")
             else
             {
                 # Check if IPinfo.io is reachable
-                if (!(Test-NetConnection -ComputerName ipinfo.io -Port 443).TcpTestSucceeded)
+                #if (!(Test-NetConnection -ComputerName ipinfo.io -Port 443).TcpTestSucceeded)
+                if (!(Test-Connection -ComputerName ipinfo.io -Count 1 -Quiet))
                 {
                     Write-Host "[Error] ipinfo.io is NOT reachable. IP addresses cannot be checked via IPinfo API." -ForegroundColor Red
                 }
@@ -933,7 +951,7 @@ if (Test-Path "$($IPinfo)")
                         {
                             if (Test-Path "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo.csv".replace('\',$dirDeli)) -gt 0)
                                 {
                                     $IPinfoRecords = Import-Csv "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo.csv" -Delimiter "," -Encoding UTF8
 
@@ -964,7 +982,7 @@ if (Test-Path "$($IPinfo)")
                             # Custom XLSX (Free)
                             if (Test-Path "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.csv".replace('\',$dirDeli)) -gt 0)
                                 {
                                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.csv" -Delimiter "," | Sort-Object {$_.ip -as [Version]}
                                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -IncludePivotTable -PivotTableName "PivotTable" -PivotRows "Country Name" -PivotData @{"IP"="Count"} -WorkSheetname "IPinfo (Free)" -CellStyleSB {
@@ -984,7 +1002,7 @@ if (Test-Path "$($IPinfo)")
                         {
                             if (Test-Path "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo.csv".replace('\',$dirDeli)) -gt 0)
                                 {
                                     $IPinfoRecords = Import-Csv "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo.csv" -Delimiter "," -Encoding UTF8
                                 
@@ -1020,7 +1038,7 @@ if (Test-Path "$($IPinfo)")
                             # Custom XLSX (Privacy Detection)
                             if (Test-Path "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.csv".replace('\',$dirDeli)) -gt 0)
                                 {
                                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.csv" -Delimiter "," | Sort-Object {$_.ip -as [Version]}
                                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -IncludePivotTable -PivotTableName "PivotTable" -PivotRows "Country Name" -PivotData @{"IP"="Count"} -WorkSheetname "IPinfo (Standard)" -CellStyleSB {
@@ -1065,7 +1083,7 @@ if (Test-Path "$($IPinfo)")
                         $script:IPinfo_HashTable = @{}
                         if (Test-Path "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.csv")
                         {
-                            if([int](& $xsv count "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.csv") -gt 0)
+                            if([int](& $xsv count "$OUTPUT_FOLDER\IPAddress\IPinfo\IPinfo-Custom.csv".replace('\',$dirDeli)) -gt 0)
                             {
                                 # Free
                                 if ($PrivacyDetection -eq "False")
@@ -1102,7 +1120,7 @@ if (Test-Path "$($IPinfo)")
                         {
                             if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv".replace('\',$dirDeli)) -gt 0)
                                 {
                                     $Records = Import-Csv -Path "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv" -Delimiter "," -Encoding UTF8
 
@@ -1213,7 +1231,7 @@ if (Test-Path "$($IPinfo)")
                             # XLSX
                             if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Hunt.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Hunt.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Hunt.csv".replace('\',$dirDeli)) -gt 0)
                                 {
                                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Hunt.csv" -Delimiter "," | Sort-Object { $_.ActivityDateTime -as [datetime] } -Descending
                                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\XLSX\Hunt.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -IncludePivotTable -PivotTableName "PivotTable" -WorkSheetname "EntraAuditLogs" -CellStyleSB {
@@ -1296,7 +1314,7 @@ if (Test-Path "$($IPinfo)")
                         {
                             if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv".replace('\',$dirDeli)) -gt 0)
                                 {
                                     $Records = Import-Csv -Path "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Untouched.csv" -Delimiter "," -Encoding UTF8
 
@@ -1427,7 +1445,7 @@ if (Test-Path "$($IPinfo)")
                             # XLSX
                             if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Hunt.csv")
                             {
-                                if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Hunt.csv") -gt 0)
+                                if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Hunt.csv".replace('\',$dirDeli)) -gt 0)
                                 {
                                     $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Hunt.csv" -Delimiter "," | Sort-Object { $_.ActivityDateTime -as [datetime] } -Descending
                                     $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\XLSX\Hunt.xlsx" -NoHyperLinkConversion * -NoNumberConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -IncludePivotTable -PivotTableName "PivotTable" -WorkSheetname "EntraAuditLogs" -CellStyleSB {
@@ -1516,6 +1534,7 @@ if (Test-Path "$($IPinfo)")
                         $Total = (Import-Csv -Path "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Hunt.csv" -Delimiter "," | Select-Object ASN | Where-Object {$_.ASN -ne '' } | Measure-Object).Count
                         if ($Total -ge "1")
                         {
+				echo $OUTPUT_FOLDER
                             $Stats = Import-Csv -Path "$OUTPUT_FOLDER\EntraAuditLogs\CSV\Hunt.csv" -Delimiter "," | Select-Object ASN,OrgName | Where-Object {$_.ASN -ne '' } | Where-Object {$null -ne ($_.PSObject.Properties | ForEach-Object {$_.Value})} | Group-Object ASN,OrgName | Select-Object @{Name='ASN'; Expression={ $_.Values[0] }},@{Name='OrgName'; Expression={ $_.Values[1] }},Count,@{Name='PercentUse'; Expression={"{0:p2}" -f ($_.Count / $Total)}} | Sort-Object Count -Descending
                             $Stats | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Stats\ASN.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "ASN" -CellStyleSB {
                             param($WorkSheet)
@@ -1653,7 +1672,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Code.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Code.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Code.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Code.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\User-registered-Authenticator-App-with-Code.xlsx" -NoNumberConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Persistence" -CellStyleSB {
@@ -1688,7 +1707,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Notification.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Notification.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Notification.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Notification.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\User-registered-Authenticator-App-with-Notification.xlsx" -NoNumberConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Persistence" -CellStyleSB {
@@ -1723,7 +1742,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Notification-and-Code.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Notification-and-Code.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Notification-and-Code.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Authenticator-App-with-Notification-and-Code.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\User-registered-Authenticator-App-with-Notification-and-Code.xlsx" -NoNumberConversion * -FreezePane 2,4 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Persistence" -CellStyleSB {
@@ -1757,7 +1776,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\StrongAuthenticationPhoneAppDetail.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\StrongAuthenticationPhoneAppDetail.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\StrongAuthenticationPhoneAppDetail.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\StrongAuthenticationPhoneAppDetail.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\StrongAuthenticationPhoneAppDetail.xlsx" -NoNumberConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Phone App Details" -CellStyleSB {
@@ -1795,7 +1814,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Mobile-Phone-SMS.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Mobile-Phone-SMS.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Mobile-Phone-SMS.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-registered-Mobile-Phone-SMS.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\User-registered-Mobile-Phone-SMS.xlsx" -NoNumberConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Persistence" -CellStyleSB {
@@ -1846,7 +1865,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-application.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-application.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-application.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-application.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\Add-application.xlsx" -NoNumberConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Add application" -CellStyleSB {
@@ -1880,7 +1899,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-service-principal.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-service-principal.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-service-principal.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-service-principal.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\Add-service-principal.xlsx" -NoNumberConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Add service principal" -CellStyleSB {
@@ -1925,7 +1944,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-delegated-permission-grant.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-delegated-permission-grant.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-delegated-permission-grant.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-delegated-permission-grant.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\Add-delegated-permission-grant.xlsx" -NoNumberConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Delegated Permission Grant" -CellStyleSB {
@@ -1959,7 +1978,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-app-role-assignment-grant-to-user.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-app-role-assignment-grant-to-user.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-app-role-assignment-grant-to-user.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-app-role-assignment-grant-to-user.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\Add-app-role-assignment-grant-to-user.xlsx" -NoNumberConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Add app role assignment grant" -CellStyleSB {
@@ -1994,7 +2013,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Admin-Consent-to-application.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Admin-Consent-to-application.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Admin-Consent-to-application.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Admin-Consent-to-application.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\Admin-Consent-to-application.xlsx" -NoNumberConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Admin Consent to application" -CellStyleSB {
@@ -2031,7 +2050,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-Consent-to-Application.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-Consent-to-Application.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-Consent-to-Application.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\User-Consent-to-Application.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\User-Consent-to-Application.xlsx" -NoNumberConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "User Consent to Application" -CellStyleSB {
@@ -2070,7 +2089,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Update-application-Certificates-and-secrets-management.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Update-application-Certificates-and-secrets-management.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Update-application-Certificates-and-secrets-management.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Update-application-Certificates-and-secrets-management.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\Update-application-Certificates-and-secrets-management.xlsx" -NoNumberConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "App Credential Modification" -CellStyleSB {
@@ -2091,7 +2110,7 @@ if ($Count -ge 1)
 # Application-Blacklist
 if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-service-principal.csv")
 {
-    if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-service-principal.csv") -gt 0)
+    if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-service-principal.csv".replace('\',$dirDeli)) -gt 0)
     {
         $Import = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Add-service-principal.csv" -Delimiter ","
 
@@ -2130,7 +2149,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Set-domain-authentication.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Set-domain-authentication.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Set-domain-authentication.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Set-domain-authentication.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\Set-domain-authentication.xlsx" -NoNumberConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Set domain authentication" -CellStyleSB {
@@ -2165,7 +2184,7 @@ if ($Count -ge 1)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Set-federation-settings-on-domain.csv")
     {
-        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Set-federation-settings-on-domain.csv") -gt 0)
+        if([int](& $xsv count "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Set-federation-settings-on-domain.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\CSV\Set-federation-settings-on-domain.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\EntraAuditLogs\Analytics\XLSX\Set-federation-settings-on-domain.xlsx" -NoNumberConversion * -FreezePane 2,3 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Set federation settings" -CellStyleSB {
