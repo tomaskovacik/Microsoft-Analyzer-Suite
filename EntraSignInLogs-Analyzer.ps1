@@ -152,7 +152,7 @@ else
 if ($isWindows){
 $script:IPinfo = "$SCRIPT_DIR\Tools\IPinfo\ipinfo.exe"
 } else {
-$script:IPinfo = "ipinfo"
+$script:IPinfo = (&which ipinfo)
 }
 
 # xsv
@@ -160,7 +160,7 @@ if ($isWindows){
 $script:xsv = "$SCRIPT_DIR\Tools\xsv\xsv.exe"
 $script:dirDeli='\'
 } else {
-$script:xsv = "xsv"
+$script:xsv = (&which xsv)
 $script:dirDeli='/'
 }
 
