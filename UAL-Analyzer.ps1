@@ -175,7 +175,7 @@ else
 if ($isWindows){
 $script:IPinfo = "$SCRIPT_DIR\Tools\IPinfo\ipinfo.exe"
 } else {
-$script:IPinfo = "ipinfo"
+$script:IPinfo = (& which ipinfo)
 }
 
 # xsv
@@ -183,7 +183,7 @@ if ($isWindows){
 $script:xsv = "$SCRIPT_DIR\Tools\xsv\xsv.exe"
 $script:dirDeli='\'
 } else {
-$script:xsv = "xsv"
+$script:xsv = (&which xsv)
 $script:dirDeli='/'
 }
 
@@ -3158,7 +3158,7 @@ if (Test-Path "$($IPinfo)")
         if ((Get-Item "$OUTPUT_FOLDER\ClientIP\IP.txt").Length -gt 0kb)
         {
             # Internet Connectivity Check (Vista+)
-            $NetworkListManager = [Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]‘{DCB00C01-570F-4A9B-8D69-199FDBA5723B}’)).IsConnectedToInternet
+            $NetworkListManager = "True"#[Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]‘{DCB00C01-570F-4A9B-8D69-199FDBA5723B}’)).IsConnectedToInternet
 
             if (!($NetworkListManager -eq "True"))
             {
@@ -3167,7 +3167,7 @@ if (Test-Path "$($IPinfo)")
             else
             {
                 # Check if IPinfo.io is reachable
-                if (!(Test-NetConnection -ComputerName ipinfo.io -Port 443).TcpTestSucceeded)
+                if (!(Test-Connection -ComputerName ipinfo.io -Count 1 -Quiet))#Test-NetConnection -ComputerName ipinfo.io -Port 443).TcpTestSucceeded)
                 {
                     Write-Host "[Error] ipinfo.io is NOT reachable. IP addresses cannot be checked via IPinfo API." -ForegroundColor Red
                 }
@@ -7443,7 +7443,7 @@ if ($Count -gt 0)
             if ((Get-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IP.txt").Length -gt 0kb)
             {
                 # Internet Connectivity Check (Vista+)
-                $NetworkListManager = [Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]‘{DCB00C01-570F-4A9B-8D69-199FDBA5723B}’)).IsConnectedToInternet
+                $NetworkListManager = "True"#[Activator]::CreateInstance([Type]::GetTypeFromCLSID([Guid]‘{DCB00C01-570F-4A9B-8D69-199FDBA5723B}’)).IsConnectedToInternet
 
                 if (!($NetworkListManager -eq "True"))
                 {
@@ -7452,7 +7452,7 @@ if ($Count -gt 0)
                 else
                 {
                     # Check if IPinfo.io is reachable
-                    if (!(Test-NetConnection -ComputerName ipinfo.io -Port 443).TcpTestSucceeded)
+                    if (!(Test-Connection -ComputerName ipinfo.io -Count 1 -Quiet))#Test-NetConnection -ComputerName ipinfo.io -Port 443).TcpTestSucceeded)
                     {
                         Write-Host "[Error] ipinfo.io is NOT reachable. IP addresses cannot be checked via IPinfo API." -ForegroundColor Red
                     }
