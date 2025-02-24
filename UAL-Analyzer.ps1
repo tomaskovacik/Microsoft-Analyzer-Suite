@@ -8430,9 +8430,10 @@ if ($Result -eq "OK" )
 {
     # Reset Progress Preference
     $Global:ProgressPreference = $OriginalProgressPreference
-
+if ($isWindows){
     # Reset Windows Title
     $Host.UI.RawUI.WindowTitle = "$DefaultWindowsTitle"
+}
     Exit
 }
 
