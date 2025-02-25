@@ -374,7 +374,7 @@ if (Test-Path "$SCRIPT_DIR\Blacklists\Country-Blacklist.csv")
 $script:MoveToFolderBlacklist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Blacklists\MoveToFolder-Blacklist.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\MoveToFolder-Blacklist.csv".replace('\','/')) -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Blacklists\MoveToFolder-Blacklist.csv".replace('\',$dirDeli)) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Blacklists\MoveToFolder-Blacklist.csv" -Delimiter "," | ForEach-Object { $MoveToFolderBlacklist_HashTable[$_.Name] = $_.Language }
 
@@ -404,7 +404,7 @@ if (Test-Path "$SCRIPT_DIR\Blacklists\UserAgent-Blacklist.csv")
 $script:LogonType_HashTable = @{}
 if(Test-Path "$SCRIPT_DIR\Config\LogonType.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Config\LogonType.csv".replace('\','/')) -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Config\LogonType.csv".replace('\',$dirDeli)) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Config\LogonType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $LogonType_HashTable[$_.Value] = $_.LogonType }
     }
@@ -414,7 +414,7 @@ if(Test-Path "$SCRIPT_DIR\Config\LogonType.csv")
 $script:MicrosoftApps_HashTable = @{}
 if(Test-Path "$SCRIPT_DIR\Config\MicrosoftApps.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Config\MicrosoftApps.csv".replace('\','/')) -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Config\MicrosoftApps.csv".replace('\',$dirDeli)) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Config\MicrosoftApps.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $MicrosoftApps_HashTable[$_.AppId] = $_.AppDisplayName }
     }
@@ -424,7 +424,7 @@ if(Test-Path "$SCRIPT_DIR\Config\MicrosoftApps.csv")
 $script:ErrorNumber_HashTable = @{}
 if(Test-Path "$SCRIPT_DIR\Config\Status.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Config\Status.csv".replace('\','/')) -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Config\Status.csv".replace('\',$dirDeli)) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Config\Status.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $ErrorNumber_HashTable[$_.ErrorCode] = $_.Status, $_.Message }
     }
@@ -434,7 +434,7 @@ if(Test-Path "$SCRIPT_DIR\Config\Status.csv")
 $script:TrustType_HashTable = @{}
 if(Test-Path "$SCRIPT_DIR\Config\TrustType.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Config\TrustType.csv".replace('\','/')) -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Config\TrustType.csv".replace('\',$dirDeli)) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Config\TrustType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $TrustType_HashTable[$_.Value] = $_.Description }
     }
@@ -444,7 +444,7 @@ if(Test-Path "$SCRIPT_DIR\Config\TrustType.csv")
 $script:UserType_HashTable = @{}
 if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
 {
-    if([int](& $xsv count "$SCRIPT_DIR\Config\UserType.csv".replace('\','/')) -gt 0)
+    if([int](& $xsv count "$SCRIPT_DIR\Config\UserType.csv".replace('\',$dirDeli)) -gt 0)
     {
         Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
     }
@@ -1330,7 +1330,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Remove-InboxRule.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Remove-InboxRule.csv".replace('\','/')) -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Remove-InboxRule.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Remove-InboxRule.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Remove-InboxRule.xlsx" -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Remove-InboxRule" -CellStyleSB {
@@ -1414,7 +1414,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Remove-InboxRule_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Remove-InboxRule_AuditData.csv".replace('\','/')) -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Remove-InboxRule_AuditData.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Remove-InboxRule_AuditData.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Remove-InboxRule_AuditData.xlsx" -NoNumberConversion * -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Remove-InboxRule" -CellStyleSB {
@@ -1450,7 +1450,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Enable-InboxRule.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Enable-InboxRule.csv".replace('\','/')) -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Enable-InboxRule.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Enable-InboxRule.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Enable-InboxRule.xlsx" -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Enable-InboxRule" -CellStyleSB {
@@ -1534,7 +1534,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Enable-InboxRule_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Enable-InboxRule_AuditData.csv".replace('\','/')) -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Enable-InboxRule_AuditData.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Enable-InboxRule_AuditData.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Enable-InboxRule_AuditData.xlsx" -NoNumberConversion * -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Enable-InboxRule" -CellStyleSB {
@@ -1567,7 +1567,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Disable-InboxRule.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Disable-InboxRule.csv".replace('\','/')) -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Disable-InboxRule.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Disable-InboxRule.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Disable-InboxRule.xlsx" -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Disable-InboxRule" -CellStyleSB {
@@ -1651,7 +1651,7 @@ if ($Count -gt 0)
     # XLSX
     if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Disable-InboxRule_AuditData.csv")
     {
-        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Disable-InboxRule_AuditData.csv".replace('\','/')) -gt 0)
+        if([int](& $xsv count -d "," "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Disable-InboxRule_AuditData.csv".replace('\',$dirDeli)) -gt 0)
         {
             $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV\Disable-InboxRule_AuditData.csv" -Delimiter ","
             $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX\Disable-InboxRule_AuditData.xlsx" -NoNumberConversion * -FreezePane 2,5 -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "Disable-InboxRule" -CellStyleSB {
@@ -7480,7 +7480,7 @@ if ($Count -gt 0)
                             {
                                 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo.csv")
                                 {
-                                    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo.csv".replace('\','/')) -gt 0)
+                                    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo.csv".replace('\',$dirDeli)) -gt 0)
                                     {
                                         $IPinfoRecords = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo.csv" -Delimiter "," -Encoding UTF8
 
@@ -7511,7 +7511,7 @@ if ($Count -gt 0)
                                 # Custom XLSX (Free)
                                 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo-Custom.csv")
                                 {
-                                    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo-Custom.csv".replace('\','/')) -gt 0)
+                                    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo-Custom.csv".replace('\',$dirDeli)) -gt 0)
                                     {
                                         $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo-Custom.csv" -Delimiter "," | Sort-Object {$_.IP -as [Version]}
                                         $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo-Custom.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -IncludePivotTable -PivotTableName "PivotTable" -PivotRows "Country Name" -PivotData @{"IP"="Count"} -WorkSheetname "IPinfo (Free)" -CellStyleSB {
@@ -7531,7 +7531,7 @@ if ($Count -gt 0)
                             {
                                 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo.csv")
                                 {
-                                    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo.csv".replace('\','/')) -gt 0)
+                                    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo.csv".replace('\',$dirDeli)) -gt 0)
                                     {
                                         $IPinfoRecords = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo.csv" -Delimiter "," -Encoding UTF8
                                 
@@ -7567,7 +7567,7 @@ if ($Count -gt 0)
                                 # Custom XLSX (Privacy Detection)
                                 if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo-Custom.csv")
                                 {
-                                    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo-Custom.csv".replace('\','/')) -gt 0)
+                                    if([int](& $xsv count "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo-Custom.csv".replace('\',$dirDeli)) -gt 0)
                                     {
                                         $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo-Custom.csv" -Delimiter "," | Sort-Object {$_.ip -as [Version]}
                                         $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Accessed-Mailbox-Items\ClientIPAddress\IPinfo\IPinfo-Custom.xlsx" -NoNumberConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -IncludePivotTable -PivotTableName "PivotTable" -PivotRows "Country Name" -PivotData @{"IP"="Count"} -WorkSheetname "IPinfo (Standard)" -CellStyleSB {
