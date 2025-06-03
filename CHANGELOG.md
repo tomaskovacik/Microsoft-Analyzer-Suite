@@ -2,6 +2,35 @@
 
 All changes to the Microsoft-Analyzer-Suite will be documented in this file.  
 
+## [1.5.1] - 2025-06-03
+### Added
+- RiskyDetections-Analyzer: ASN-Blacklist.csv
+- RiskyDetections-Analyzer: Country-Blacklist.csv
+- RiskyDetections-Analyzer: UserAgent-Blacklist.csv
+- RiskyDetections-Analyzer: Check for Microsoft Entra ID Premium P2 license
+- RiskyDetections-Analyzer: IP Enrichment w/ IPinfo
+
+## Fixed
+- EntraSignInLogs-Analyzer: CreatedDateTime
+- EntraAuditLogs-Analyzer: ActivityDateTime
+
+## [1.5.0] - 2025-05-15
+### Added
+- EntraSignInLogs-Analyzer: OriginalTransferMethod
+- EntraSignInLogs-Analyzer: OriginalTransferMethod (Stats)
+- EntraSignInLogs-Analyzer: UserAgent-Blacklist.csv
+- EntraSignInLogs-Analyzer: CrossTenantAccessType
+- EntraSignInLogs-Analyzer: Hunting for Suspicious Sign-In Activity (20 Rules)
+- MTL-Analyzer: Detection of Inbound and Outbound Messages sent by eM Client
+- UAL-Analyzer: Detection of Inbound and Outbound Messages sent by eM Client
+- UAL-Analyzer: UpdateInboxRules + Create
+- UAL-Analyzer: UpdateInboxRules + Update
+- UAL-Analyzer: UpdateInboxRules + Delete
+- UAL-Analyzer: 'Update' Mailbox-Auditing Actions View
+
+### Fixed
+- Minor fixes and improvements
+
 ## [1.4.0] - 2025-02-24
 ### Added
 - UAL-Analyzer: Detection of suspicious Inbox Rules via RegEx (incl. Conditional Formatting)
