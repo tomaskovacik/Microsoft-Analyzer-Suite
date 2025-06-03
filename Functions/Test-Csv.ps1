@@ -51,7 +51,13 @@ Begin
 
 Process
 {
+    if ($isWindows){ 
     $Reader = New-Object -TypeName System.IO.StreamReader -ArgumentList $Path -ErrorAction Stop
+    }
+    if ($isLinux){ 
+    $Reader = New-Object -TypeName System.IO.StreamReader -ArgumentList $Path.replace('\','/') -ErrorAction Stop
+    }
+
 
     $CsvRawLinesCount  = 0
     $CsvDataLinesCount = 0
