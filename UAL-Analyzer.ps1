@@ -5633,6 +5633,12 @@ if (Test-Path "$($IPinfo)")
                                         Set-Format -Address $WorkSheet.Cells["A1:B1"] -BackgroundColor $BackgroundColor -FontColor White
                                         # HorizontalAlignment "Center" of columns A-B
                                         $WorkSheet.Cells["A:B"].Style.HorizontalAlignment="Center"
+					}
+                                    }
+
+                                    # ExchangeItemGroup-MoveToDeletedItems.xlsx
+                                    if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-MoveToDeletedItems.csv")
+                                    {
                                         $IMPORT = Import-Csv "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV\ExchangeItemGroup-MoveToDeletedItems.csv" -Delimiter "," | Select-Object CreationTime,UserId,RecordType,Operation,ObjectId,ClientIP,UserAgent,City,Region,Country,"Country Name",ASN,OrgName,Timezone,Workload
                                         $IMPORT | Export-Excel -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX\ExchangeItemGroup-MoveToDeletedItems.xlsx" -NoNumberConversion * -NoHyperLinkConversion * -FreezeTopRow -BoldTopRow -AutoSize -AutoFilter -WorkSheetname "MoveToDeletedItems" -CellStyleSB {
                                         param($WorkSheet)
@@ -5644,7 +5650,7 @@ if (Test-Path "$($IPinfo)")
 
                                         # ConditionalFormatting - Operation
                                         Add-ConditionalFormatting -Address $WorkSheet.Cells["C:D"] -WorkSheet $WorkSheet -RuleType 'Expression' 'NOT(ISERROR(FIND("MoveToDeletedItems",$D1)))' -BackgroundColor Red
-                                        
+
                                         }
                                     }
                                 }
