@@ -2994,16 +2994,6 @@ if ($Count -gt 0)
     New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\CSV" -ItemType Directory -Force | Out-Null
     New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Operations\XLSX" -ItemType Directory -Force | Out-Null
 
-    # Create HashTable and import 'UserType.csv'
-    $UserType_HashTable = @{}
-    if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
-    {
-        if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\UserType.csv") -gt 0)
-        {
-            Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
-        }
-    }
-
     # AuditData
     
     # CSV
@@ -4789,16 +4779,6 @@ if (Test-Path "$($IPinfo)")
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
 
-                            # Create HashTable and import 'UserType.csv'
-                            $UserType_HashTable = @{}
-                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
-                            {
-                                if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\UserType.csv") -gt 0)
-                                {
-                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
-                                }
-                            }
-
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
                             ForEach($Record in $Records)
@@ -4915,16 +4895,6 @@ if (Test-Path "$($IPinfo)")
                             Write-Host "[Info]  $SoftDelete messages were deleted from Deleted Items folder: SoftDelete (AggregatedItems)"
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
-
-                            # Create HashTable and import 'UserType.csv'
-                            $UserType_HashTable = @{}
-                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
-                            {
-                                if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\UserType.csv") -gt 0)
-                                {
-                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
-                                }
-                            }
 
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
@@ -5079,16 +5049,6 @@ if (Test-Path "$($IPinfo)")
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
 
-                            # Create HashTable and import 'UserType.csv'
-                            $UserType_HashTable = @{}
-                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
-                            {
-                                if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\UserType.csv") -gt 0)
-                                {
-                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
-                                }
-                            }
-
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
                             ForEach($Record in $Records)
@@ -5201,26 +5161,6 @@ if (Test-Path "$($IPinfo)")
                             Write-Host "[Info]  $Send messages were sent, replied to or forwarded: Send"
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
-
-                            # Create HashTable and import 'UserType.csv'
-                            $UserType_HashTable = @{}
-                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
-                            {
-                                if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\UserType.csv") -gt 0)
-                                {
-                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
-                                }
-                            }
-
-                            # Create HashTable and import 'LogonType.csv'
-                            $LogonType_HashTable = @{}
-                            if(Test-Path "$SCRIPT_DIR\Config\LogonType.csv")
-                            {
-                                if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\LogonType.csv") -gt 0)
-                                {
-                                    Import-Csv "$SCRIPT_DIR\Config\LogonType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $LogonType_HashTable[$_.Value] = $_.LogonType }
-                                }
-                            }
 
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
@@ -5344,26 +5284,6 @@ if (Test-Path "$($IPinfo)")
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
 
-                            # Create HashTable and import 'UserType.csv'
-                            $UserType_HashTable = @{}
-                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
-                            {
-                                if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\UserType.csv") -gt 0)
-                                {
-                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
-                                }
-                            }
-
-                            # Create HashTable and import 'LogonType.csv'
-                            $LogonType_HashTable = @{}
-                            if(Test-Path "$SCRIPT_DIR\Config\LogonType.csv")
-                            {
-                                if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\LogonType.csv") -gt 0)
-                                {
-                                    Import-Csv "$SCRIPT_DIR\Config\LogonType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $LogonType_HashTable[$_.Value] = $_.LogonType }
-                                }
-                            }
-
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
                             ForEach($Record in $Records)
@@ -5485,26 +5405,6 @@ if (Test-Path "$($IPinfo)")
                             Write-Host "[Info]  $SendOnBehalf messages were sent using SendOnBehalf permisisons: SendOnBehalf"
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\CSV" -ItemType Directory -Force | Out-Null
                             New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\Suspicious-Mailbox-Actions\XLSX" -ItemType Directory -Force | Out-Null
-
-                            # Create HashTable and import 'UserType.csv'
-                            $UserType_HashTable = @{}
-                            if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
-                            {
-                                if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\UserType.csv") -gt 0)
-                                {
-                                    Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
-                                }
-                            }
-
-                            # Create HashTable and import 'LogonType.csv'
-                            $LogonType_HashTable = @{}
-                            if(Test-Path "$SCRIPT_DIR\Config\LogonType.csv")
-                            {
-                                if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\LogonType.csv") -gt 0)
-                                {
-                                    Import-Csv "$SCRIPT_DIR\Config\LogonType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $LogonType_HashTable[$_.Value] = $_.LogonType }
-                                }
-                            }
 
                             # CSV
                             $Results = [Collections.Generic.List[PSObject]]::new()
@@ -6472,36 +6372,6 @@ $AuditData = $UserLoggedInRecords | Select-Object -ExpandProperty AuditData | Co
 New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV" -ItemType Directory -Force | Out-Null
 New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX" -ItemType Directory -Force | Out-Null
 
-# Create HashTable and import 'Status.csv'
-$ErrorNumber_HashTable = @{}
-if(Test-Path "$SCRIPT_DIR\Config\Status.csv")
-{
-    if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\Status.csv") -gt 0)
-    {
-        Import-Csv "$SCRIPT_DIR\Config\Status.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $ErrorNumber_HashTable[$_.ErrorCode] = $_.Status, $_.Message }
-    }
-}
-
-# Create HashTable and import 'TrustType.csv'
-$TrustType_HashTable = @{}
-if(Test-Path "$SCRIPT_DIR\Config\TrustType.csv")
-{
-    if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\TrustType.csv") -gt 0)
-    {
-        Import-Csv "$SCRIPT_DIR\Config\TrustType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $TrustType_HashTable[$_.Value] = $_.Description }
-    }
-}
-
-# Create HashTable and import 'UserType.csv'
-$UserType_HashTable = @{}
-if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
-{
-    if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\UserType.csv") -gt 0)
-    {
-        Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
-    }
-}
-
 # IPinfo Subscription: Free
 if ($PrivacyDetection -eq "False")
 {
@@ -7051,36 +6921,6 @@ $AuditData = $UserLoginFailedRecords | Select-Object -ExpandProperty AuditData |
 
 New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV" -ItemType Directory -Force | Out-Null
 New-Item "$OUTPUT_FOLDER\UnifiedAuditLogs\XLSX" -ItemType Directory -Force | Out-Null
-
-# Create HashTable and import 'Status.csv'
-$ErrorNumber_HashTable = @{}
-if(Test-Path "$SCRIPT_DIR\Config\Status.csv")
-{
-    if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\Status.csv") -gt 0)
-    {
-        Import-Csv "$SCRIPT_DIR\Config\Status.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $ErrorNumber_HashTable[$_.ErrorCode] = $_.Status, $_.Message }
-    }
-}
-
-# Create HashTable and import 'TrustType.csv'
-$TrustType_HashTable = @{}
-if(Test-Path "$SCRIPT_DIR\Config\TrustType.csv")
-{
-    if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\TrustType.csv") -gt 0)
-    {
-        Import-Csv "$SCRIPT_DIR\Config\TrustType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $TrustType_HashTable[$_.Value] = $_.Description }
-    }
-}
-
-# Create HashTable and import 'UserType.csv'
-$UserType_HashTable = @{}
-if(Test-Path "$SCRIPT_DIR\Config\UserType.csv")
-{
-    if([int](Get-csvCount -csvPath "$SCRIPT_DIR\Config\UserType.csv") -gt 0)
-    {
-        Import-Csv "$SCRIPT_DIR\Config\UserType.csv" -Delimiter "," -Encoding UTF8 | ForEach-Object { $UserType_HashTable[$_.Value] = $_.Member, $_.Description }
-    }
-}
 
 # IPinfo Subscription: Free
 if ($PrivacyDetection -eq "False")
