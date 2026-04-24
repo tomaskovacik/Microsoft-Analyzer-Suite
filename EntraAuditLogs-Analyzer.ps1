@@ -281,12 +281,12 @@ Write-Output "Analysis date: $AnalysisDate UTC"
 Write-Output ""
 
 # Create HashTable and import 'IP-Whitelist.csv'
-$script:IpWhitelist_HashTable = [ordered]@{}
+$script:IPWhitelist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv")
 {
     if(Test-Csv -Path "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv" -MaxLines 2)
     {
-        Import-Csv "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv" -Delimiter "," | ForEach-Object { $IpWhitelist_HashTable[$_.IPAddress] = $_.Info }
+        Import-Csv "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv" -Delimiter "," | ForEach-Object { $IPWhitelist_HashTable[$_.IPAddress] = $_.Info }
     }
 }
 
@@ -1563,7 +1563,7 @@ if (Test-Path "$($IPinfo)")
                             $WorkSheet.Cells["A:G"].Style.HorizontalAlignment="Center"
 
                             # Iterating over the IP-Whitelist HashTable
-                            foreach ($IP in $IpWhitelist_HashTable.Keys) 
+                            foreach ($IP in $IPWhitelist_HashTable.Keys) 
                             {
                                 $ConditionValue = 'NOT(ISERROR(FIND("{0}",$A1)))' -f $IP
                                 Add-ConditionalFormatting -Address $WorkSheet.Cells["A:A"] -WorkSheet $WorkSheet -RuleType 'Expression' -ConditionValue $ConditionValue -BackgroundColor $Green
