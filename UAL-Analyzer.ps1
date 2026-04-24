@@ -181,6 +181,13 @@ if (Test-Path "$SCRIPT_DIR\Whitelists\ASN-Whitelist.csv")
     $script:Whitelist = (Import-Csv "$SCRIPT_DIR\Whitelists\ASN-Whitelist.csv" -Delimiter "," | Select-Object -ExpandProperty ASN) -join "|"
 }
 
+# IP Whitelist
+$script:IPWhitelist = ""
+if (Test-Path "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv")
+{
+    $script:IPWhitelist = (Import-Csv "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv" -Delimiter "," | Select-Object -ExpandProperty IPAddress) -join "|"
+}
+
 # Import Functions
 $FilePath = "$SCRIPT_DIR\Functions"
 if (Test-Path "$FilePath")
@@ -4580,6 +4587,16 @@ if (Test-Path "$($IPinfo)")
                             # HorizontalAlignment "Center" of columns A-G
                             $WorkSheet.Cells["A:G"].Style.HorizontalAlignment="Center"
 
+                            # Iterating over the IP-Whitelist
+                            if ($IPWhitelist -ne "")
+                            {
+                                foreach ($IP in ($IPWhitelist -split "\|"))
+                                {
+                                    $ConditionValue = 'NOT(ISERROR(FIND("{0}",$A1)))' -f $IP
+                                    Add-ConditionalFormatting -Address $WorkSheet.Cells["A:A"] -WorkSheet $WorkSheet -RuleType 'Expression' -ConditionValue $ConditionValue -BackgroundColor $Green
+                                }
+                            }
+
                             # Iterating over the ASN-Blacklist HashTable
                             foreach ($ASN in $AsnBlacklist_HashTable.Keys) 
                             {
@@ -7510,7 +7527,7 @@ if (Test-Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv")
 {
     if(Test-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv" -MaxLines 2)
     {
-        $Import = Import-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv" -Delimiter "," | Where-Object { $_.ClientInfoString -eq "Client=OWA;Action=ViaProxy" } | Where-Object { $_.ASN -notmatch ($Whitelist) } | Sort-Object { $_.CreationTime -as [datetime] } -Descending
+        $Import = Import-Csv -Path "$OUTPUT_FOLDER\UnifiedAuditLogs\CSV\Hunt.csv" -Delimiter "," | Where-Object { $_.ClientInfoString -eq "Client=OWA;Action=ViaProxy" } | Where-Object { $_.ASN -notmatch ($Whitelist) } | Where-Object { $IPWhitelist -eq "" -or $_.ClientIP -notmatch ($IPWhitelist) } | Sort-Object { $_.CreationTime -as [datetime] } -Descending
         $Count = [string]::Format('{0:N0}',($Import | Measure-Object).Count)
 
         if ($Count -gt 0)
@@ -8663,6 +8680,16 @@ if ($Count -gt 0)
             Set-Format -Address $WorkSheet.Cells["A1:G1"] -BackgroundColor $BackgroundColor -FontColor White
             # HorizontalAlignment "Center" of columns A-G
             $WorkSheet.Cells["A:G"].Style.HorizontalAlignment="Center"
+
+            # Iterating over the IP-Whitelist
+            if ($IPWhitelist -ne "")
+            {
+                foreach ($IP in ($IPWhitelist -split "\|"))
+                {
+                    $ConditionValue = 'NOT(ISERROR(FIND("{0}",$A1)))' -f $IP
+                    Add-ConditionalFormatting -Address $WorkSheet.Cells["A:A"] -WorkSheet $WorkSheet -RuleType 'Expression' -ConditionValue $ConditionValue -BackgroundColor $Green
+                }
+            }
 
             # Iterating over the ASN-Blacklist HashTable
             foreach ($ASN in $AsnBlacklist_HashTable.Keys) 
