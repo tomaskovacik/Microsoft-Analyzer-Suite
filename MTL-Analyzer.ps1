@@ -271,6 +271,16 @@ if (Test-Path "$SCRIPT_DIR\Whitelists\ASN-Whitelist.csv")
     }
 }
 
+# Create HashTable and import 'IP-Whitelist.csv'
+$script:IPWhitelist_HashTable = [ordered]@{}
+if (Test-Path "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv")
+{
+    if(Test-Csv -Path "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv" -MaxLines 2)
+    {
+        Import-Csv "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv" -Delimiter "," | ForEach-Object { $IPWhitelist_HashTable[$_.IPAddress] = $_.Info }
+    }
+}
+
 # Create HashTable and import 'ASN-Blacklist.csv'
 $script:AsnBlacklist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Blacklists\ASN-Blacklist.csv")
@@ -1163,6 +1173,13 @@ if (Test-Path "$($IPinfo)")
                                 # HorizontalAlignment "Center" of columns A-P
                                 $WorkSheet.Cells["A:P"].Style.HorizontalAlignment="Center"
 
+                                # Iterating over the IP-Whitelist HashTable
+                                foreach ($IP in $IPWhitelist_HashTable.Keys) 
+                                {
+                                    $ConditionValue = 'NOT(ISERROR(FIND("{0}",$K1)))' -f $IP
+                                    Add-ConditionalFormatting -Address $WorkSheet.Cells["K:K"] -WorkSheet $WorkSheet -RuleType 'Expression' -ConditionValue $ConditionValue -BackgroundColor $Green
+                                }
+
                                 # Iterating over the ASN-Whitelist HashTable
                                 foreach ($ASN in $AsnWhitelist_HashTable.Keys) 
                                 {
@@ -1308,6 +1325,13 @@ if (Test-Path "$($IPinfo)")
                                 Set-Format -Address $WorkSheet.Cells["A1:G1"] -BackgroundColor $BackgroundColor -FontColor White
                                 # HorizontalAlignment "Center" of columns A-G
                                 $WorkSheet.Cells["A:G"].Style.HorizontalAlignment="Center"
+
+                                # Iterating over the IP-Whitelist HashTable
+                                foreach ($IP in $IPWhitelist_HashTable.Keys) 
+                                {
+                                    $ConditionValue = 'NOT(ISERROR(FIND("{0}",$B1)))' -f $IP
+                                    Add-ConditionalFormatting -Address $WorkSheet.Cells["B:B"] -WorkSheet $WorkSheet -RuleType 'Expression' -ConditionValue $ConditionValue -BackgroundColor $Green
+                                }
 
                                 # Iterating over the ASN-Whitelist HashTable
                                 foreach ($ASN in $AsnWhitelist_HashTable.Keys) 

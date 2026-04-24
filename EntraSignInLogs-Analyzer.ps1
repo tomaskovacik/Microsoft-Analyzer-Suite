@@ -281,6 +281,20 @@ $script:AnalysisDate = [datetime]::Now.ToUniversalTime().ToString("yyyy-MM-dd HH
 Write-Output "Analysis date: $AnalysisDate UTC"
 Write-Output ""
 
+# Create HashTable and import 'IP-Whitelist.csv'
+$script:IPWhitelist_HashTable = [ordered]@{}
+if (Test-Path "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv")
+{
+    if(Test-Csv -Path "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv" -MaxLines 2)
+    {
+        Import-Csv "$SCRIPT_DIR\Whitelists\IP-Whitelist.csv" -Delimiter "," | ForEach-Object { $IPWhitelist_HashTable[$_.IPAddress] = $_.Info }
+
+        # Count Ingested Properties
+        $Count = $IPWhitelist_HashTable.Count
+        Write-Output "[Info]  Initializing 'IP-Whitelist.csv' Lookup Table ($Count) ..."
+    }
+}
+
 # Create HashTable and import 'Application-Blacklist.csv'
 $script:ApplicationBlacklist_HashTable = [ordered]@{}
 if (Test-Path "$SCRIPT_DIR\Blacklists\Application-Blacklist.csv")
@@ -1584,6 +1598,13 @@ if ($Total -ge "1")
     Set-Format -Address $WorkSheet.Cells["A1:G1"] -BackgroundColor $BackgroundColor -FontColor White
     # HorizontalAlignment "Center" of columns A-G
     $WorkSheet.Cells["A:G"].Style.HorizontalAlignment="Center"
+
+    # Iterating over the IP-Whitelist HashTable
+    foreach ($IP in $IPWhitelist_HashTable.Keys) 
+    {
+        $ConditionValue = 'NOT(ISERROR(FIND("{0}",$A1)))' -f $IP
+        Add-ConditionalFormatting -Address $WorkSheet.Cells["A:A"] -WorkSheet $WorkSheet -RuleType 'Expression' -ConditionValue $ConditionValue -BackgroundColor $Green
+    }
 
     # Iterating over the ASN-Blacklist HashTable
     foreach ($ASN in $AsnBlacklist_HashTable.Keys) 
